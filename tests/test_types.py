@@ -15,7 +15,7 @@ def test_jsonrpc_request():
 
     request = JSONRPCMessage.model_validate(json_data)
     assert isinstance(request.root, JSONRPCRequest)
-    ClientRequest.model_validate(request.model_dump(by_alias=True))
+    ClientRequest.model_validate(request.model_dump(by_alias=True, exclude_none=True))
 
     assert request.root.jsonrpc == "2.0"
     assert request.root.id == 1
