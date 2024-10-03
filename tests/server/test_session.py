@@ -53,7 +53,7 @@ async def test_server_session_initialize():
             tg.start_soon(run_server)
 
             await client_session.initialize()
-    except* anyio.ClosedResourceError:
+    except anyio.ClosedResourceError:
         pass
 
     assert received_initialized
