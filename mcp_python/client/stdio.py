@@ -70,7 +70,7 @@ async def stdio_client(server: StdioServerParameters):
         try:
             async with write_stream_reader:
                 async for message in write_stream_reader:
-                    json = message.model_dump_json(by_alias=True)
+                    json = message.model_dump_json(by_alias=True, exclude_none=True)
                     await process.stdin.send((json + "\n").encode())
         except anyio.ClosedResourceError:
             await anyio.lowlevel.checkpoint()
