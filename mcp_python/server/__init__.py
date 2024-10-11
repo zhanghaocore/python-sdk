@@ -20,6 +20,8 @@ from mcp_python.types import (
     CompleteRequest,
     ErrorData,
     JSONRPCMessage,
+    ListPromptsRequest,
+    ListPromptsResult,
     ListResourcesRequest,
     ListResourcesResult,
     LoggingLevel,
@@ -57,8 +59,6 @@ class Server:
         return request_ctx.get()
 
     def list_prompts(self):
-        from mcp_python.types import ListPromptsRequest, ListPromptsResult
-
         def decorator(func: Callable[[], Awaitable[list[Prompt]]]):
             logger.debug(f"Registering handler for PromptListRequest")
 
@@ -90,7 +90,7 @@ class Server:
 
             async def handler(req: GetPromptRequest):
                 prompt_get = await func(req.params.name, req.params.arguments)
-                messages = []
+                messages: list[SamplingMessage] = []
                 for message in prompt_get.messages:
                     match message.content:
                         case str() as text_content:
