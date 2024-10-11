@@ -32,6 +32,7 @@ from mcp_python.types import (
     ReadResourceResult,
     Resource,
     ResourceReference,
+    ServerCapabilities,
     ServerResult,
     SetLevelRequest,
     SubscribeRequest,
@@ -39,7 +40,6 @@ from mcp_python.types import (
 )
 
 logger = logging.getLogger(__name__)
-
 
 request_ctx: contextvars.ContextVar[RequestContext] = contextvars.ContextVar(
     "request_ctx"
@@ -52,6 +52,33 @@ class Server:
         self.request_handlers: dict[type, Callable[..., Awaitable[ServerResult]]] = {}
         self.notification_handlers: dict[type, Callable[..., Awaitable[None]]] = {}
         logger.info(f"Initializing server '{name}'")
+
+    def create_initialization_options(self) -> types.InitializationOptions:
+        """Create initialization options from this server instance."""
+        def pkg_version(package: str) -> str:
+            try:
+                from importlib.metadata import version
+                return version(package)
+            except Exception:
+                return "unknown"
+
+        return types.InitializationOptions(
+            server_name=self.name,
+            server_version=pkg_version("mcp_python"),
+            capabilities=self.get_capabilities(),
+        )
+
+    def get_capabilities(self) -> ServerCapabilities:
+            """Convert existing handlers to a ServerCapabilities object."""
+            def get_capability(req_type: type) -> dict[str, Any] | None:
+                return {} if req_type in self.request_handlers else None
+
+            return ServerCapabilities(
+                prompts=get_capability(ListPromptsRequest),
+                resources=get_capability(ListResourcesRequest),
+                tools=get_capability(ListPromptsRequest),
+                logging=get_capability(SetLevelRequest)
+            )
 
     @property
     def request_context(self) -> RequestContext:
@@ -280,9 +307,10 @@ class Server:
         self,
         read_stream: MemoryObjectReceiveStream[JSONRPCMessage | Exception],
         write_stream: MemoryObjectSendStream[JSONRPCMessage],
+        initialization_options: types.InitializationOptions
     ):
         with warnings.catch_warnings(record=True) as w:
-            async with ServerSession(read_stream, write_stream) as session:
+            async with ServerSession(read_stream, write_stream, initialization_options) as session:
                 async for message in session.incoming_messages:
                     logger.debug(f"Received message: {message}")
 

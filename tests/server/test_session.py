@@ -2,11 +2,14 @@ import anyio
 import pytest
 
 from mcp_python.client.session import ClientSession
+from mcp_python.server import Server
 from mcp_python.server.session import ServerSession
+from mcp_python.server.types import InitializationOptions
 from mcp_python.types import (
     ClientNotification,
     InitializedNotification,
     JSONRPCMessage,
+    ServerCapabilities,
 )
 
 
@@ -30,7 +33,7 @@ async def test_server_session_initialize():
         nonlocal received_initialized
 
         async with ServerSession(
-            client_to_server_receive, server_to_client_send
+            client_to_server_receive, server_to_client_send, InitializationOptions(server_name='mcp_python', server_version='0.1.0', capabilities=ServerCapabilities())
         ) as server_session:
             async for message in server_session.incoming_messages:
                 if isinstance(message, Exception):
@@ -57,3 +60,31 @@ async def test_server_session_initialize():
         pass
 
     assert received_initialized
+
+
+@pytest.mark.anyio
+async def test_server_capabilities():
+    server = Server("test")
+
+    # Initially no capabilities
+    caps = server.get_capabilities()
+    assert caps.prompts is None
+    assert caps.resources is None
+
+    # Add a prompts handler
+    @server.list_prompts()
+    async def list_prompts():
+        return []
+
+    caps = server.get_capabilities()
+    assert caps.prompts == {}
+    assert caps.resources is None
+
+    # Add a resources handler
+    @server.list_resources()
+    async def list_resources():
+        return []
+
+    caps = server.get_capabilities()
+    assert caps.prompts == {}
+    assert caps.resources == {}

@@ -10,6 +10,7 @@ from mcp_python.shared.session import (
     BaseSession,
     RequestResponder,
 )
+from mcp_python.server.types import InitializationOptions
 from mcp_python.shared.version import SUPPORTED_PROTOCOL_VERSION
 from mcp_python.types import (
     ClientNotification,
@@ -52,9 +53,11 @@ class ServerSession(
         self,
         read_stream: MemoryObjectReceiveStream[JSONRPCMessage | Exception],
         write_stream: MemoryObjectSendStream[JSONRPCMessage],
+        init_options: InitializationOptions
     ) -> None:
         super().__init__(read_stream, write_stream, ClientRequest, ClientNotification)
         self._initialization_state = InitializationState.NotInitialized
+        self._init_options = init_options
 
     async def _received_request(
         self, responder: RequestResponder[ClientRequest, ServerResult]
@@ -66,15 +69,10 @@ class ServerSession(
                     ServerResult(
                         InitializeResult(
                             protocolVersion=SUPPORTED_PROTOCOL_VERSION,
-                            capabilities=ServerCapabilities(
-                                logging=None,
-                                resources=None,
-                                tools=None,
-                                experimental=None,
-                                prompts={},
-                            ),
+                            capabilities=self._init_options.capabilities,
                             serverInfo=Implementation(
-                                name="mcp_python", version="0.1.0"
+                                name=self._init_options.server_name,
+                                version=self._init_options.server_version
                             ),
                         )
                     )
