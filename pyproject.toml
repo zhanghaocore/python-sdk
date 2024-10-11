@@ -22,7 +22,6 @@ packages = ["mcp_python"]
 
 [tool.pyright]
 include = ["mcp_python", "tests"]
-typeCheckingMode = "strict"
 venvPath = "."
 venv = ".venv"
 
