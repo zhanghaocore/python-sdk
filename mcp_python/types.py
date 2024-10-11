@@ -41,23 +41,23 @@ class NotificationParams(BaseModel):
     This parameter name is reserved by MCP to allow clients and servers to attach additional metadata to their notifications.
     """
 
-
 RequestParamsT = TypeVar("RequestParamsT", bound=RequestParams)
 NotificationParamsT = TypeVar("NotificationParamsT", bound=NotificationParams)
+MethodT = TypeVar("MethodT", bound=str)
 
 
-class Request(BaseModel, Generic[RequestParamsT]):
+class Request(BaseModel, Generic[RequestParamsT, MethodT]):
     """Base class for JSON-RPC requests."""
 
-    method: str
+    method: MethodT
     params: RequestParamsT
     model_config = ConfigDict(extra="allow")
 
 
-class Notification(BaseModel, Generic[NotificationParamsT]):
+class Notification(BaseModel, Generic[NotificationParamsT, MethodT]):
     """Base class for JSON-RPC notifications."""
 
-    method: str
+    method: MethodT
     model_config = ConfigDict(extra="allow")
 
 
