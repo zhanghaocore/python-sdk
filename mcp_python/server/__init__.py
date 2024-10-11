@@ -24,6 +24,8 @@ from mcp_python.types import (
     ListPromptsResult,
     ListResourcesRequest,
     ListResourcesResult,
+    ListToolsRequest,
+    ListToolsResult,
     LoggingLevel,
     ProgressNotification,
     Prompt,
@@ -36,6 +38,7 @@ from mcp_python.types import (
     ServerResult,
     SetLevelRequest,
     SubscribeRequest,
+    Tool,
     UnsubscribeRequest,
 )
 
@@ -79,7 +82,7 @@ class Server:
         return ServerCapabilities(
             prompts=get_capability(ListPromptsRequest),
             resources=get_capability(ListResourcesRequest),
-            tools=get_capability(ListPromptsRequest),
+            tools=get_capability(ListToolsRequest),
             logging=get_capability(SetLevelRequest),
         )
 
@@ -205,6 +208,7 @@ class Server:
 
         return decorator
 
+
     def set_logging_level(self):
         from mcp_python.types import EmptyResult
 
@@ -246,6 +250,19 @@ class Server:
                 return ServerResult(EmptyResult())
 
             self.request_handlers[UnsubscribeRequest] = handler
+            return func
+
+        return decorator
+
+    def list_tools(self):
+        def decorator(func: Callable[[], Awaitable[list[Tool]]]):
+            logger.debug("Registering handler for ListToolsRequest")
+
+            async def handler(_: Any):
+                tools = await func()
+                return ServerResult(ListToolsResult(tools=tools))
+
+            self.request_handlers[ListToolsRequest] = handler
             return func
 
         return decorator
