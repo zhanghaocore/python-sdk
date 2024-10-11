@@ -1,12 +1,12 @@
+name: ruff
+
 on:
   push:
-    branches:
-      - main
-
+    branches: [main]
   pull_request:
 
 jobs:
-  build:
+  format:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,5 +25,5 @@ jobs:
       - name: Install the project
         run: uv sync --frozen --all-extras --dev
 
-      - name: Run pytest
-        run: uv run --frozen pytest
+      - name: Run ruff format check
+        run: uv run --frozen ruff check .
