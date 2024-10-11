@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def websocket_server(scope: Scope, receive: Receive, send: Send):
     """
-    WebSocket server transport for MCP. This is an ASGI application, suitable to be used with a framework like Starlette and a server like Hypercorn.
+    WebSocket server transport for MCP. This is an ASGI application, suitable to be
+    used with a framework like Starlette and a server like Hypercorn.
     """
 
     websocket = WebSocket(scope, receive, send)
@@ -47,7 +48,9 @@ async def websocket_server(scope: Scope, receive: Receive, send: Send):
         try:
             async with write_stream_reader:
                 async for message in write_stream_reader:
-                    obj = message.model_dump(by_alias=True, mode="json", exclude_none=True)
+                    obj = message.model_dump(
+                        by_alias=True, mode="json", exclude_none=True
+                    )
                     await websocket.send_json(obj)
         except anyio.ClosedResourceError:
             await websocket.close()

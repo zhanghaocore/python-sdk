@@ -19,10 +19,14 @@ logger = logging.getLogger(__name__)
 
 class SseServerTransport:
     """
-    SSE server transport for MCP. This class provides _two_ ASGI applications, suitable to be used with a framework like Starlette and a server like Hypercorn:
+    SSE server transport for MCP. This class provides _two_ ASGI applications,
+    suitable to be used with a framework like Starlette and a server like Hypercorn:
 
-        1. connect_sse() is an ASGI application which receives incoming GET requests, and sets up a new SSE stream to send server messages to the client.
-        2. handle_post_message() is an ASGI application which receives incoming POST requests, which should contain client messages that link to a previously-established SSE session.
+        1. connect_sse() is an ASGI application which receives incoming GET requests,
+           and sets up a new SSE stream to send server messages to the client.
+        2. handle_post_message() is an ASGI application which receives incoming POST
+           requests, which should contain client messages that link to a
+           previously-established SSE session.
     """
 
     _endpoint: str
@@ -30,7 +34,8 @@ class SseServerTransport:
 
     def __init__(self, endpoint: str) -> None:
         """
-        Creates a new SSE server transport, which will direct the client to POST messages to the relative or absolute URL given.
+        Creates a new SSE server transport, which will direct the client to POST
+        messages to the relative or absolute URL given.
         """
 
         super().__init__()
@@ -74,7 +79,9 @@ class SseServerTransport:
                     await sse_stream_writer.send(
                         {
                             "event": "message",
-                            "data": message.model_dump_json(by_alias=True, exclude_none=True),
+                            "data": message.model_dump_json(
+                                by_alias=True, exclude_none=True
+                            ),
                         }
                     )
 

@@ -55,9 +55,11 @@ class Server:
 
     def create_initialization_options(self) -> types.InitializationOptions:
         """Create initialization options from this server instance."""
+
         def pkg_version(package: str) -> str:
             try:
                 from importlib.metadata import version
+
                 return version(package)
             except Exception:
                 return "unknown"
@@ -69,16 +71,17 @@ class Server:
         )
 
     def get_capabilities(self) -> ServerCapabilities:
-            """Convert existing handlers to a ServerCapabilities object."""
-            def get_capability(req_type: type) -> dict[str, Any] | None:
-                return {} if req_type in self.request_handlers else None
+        """Convert existing handlers to a ServerCapabilities object."""
 
-            return ServerCapabilities(
-                prompts=get_capability(ListPromptsRequest),
-                resources=get_capability(ListResourcesRequest),
-                tools=get_capability(ListPromptsRequest),
-                logging=get_capability(SetLevelRequest)
-            )
+        def get_capability(req_type: type) -> dict[str, Any] | None:
+            return {} if req_type in self.request_handlers else None
+
+        return ServerCapabilities(
+            prompts=get_capability(ListPromptsRequest),
+            resources=get_capability(ListResourcesRequest),
+            tools=get_capability(ListPromptsRequest),
+            logging=get_capability(SetLevelRequest),
+        )
 
     @property
     def request_context(self) -> RequestContext:
@@ -87,7 +90,7 @@ class Server:
 
     def list_prompts(self):
         def decorator(func: Callable[[], Awaitable[list[Prompt]]]):
-            logger.debug(f"Registering handler for PromptListRequest")
+            logger.debug("Registering handler for PromptListRequest")
 
             async def handler(_: Any):
                 prompts = await func()
@@ -103,9 +106,11 @@ class Server:
             GetPromptRequest,
             GetPromptResult,
             ImageContent,
-            Role as Role,
             SamplingMessage,
             TextContent,
+        )
+        from mcp_python.types import (
+            Role as Role,
         )
 
         def decorator(
@@ -113,7 +118,7 @@ class Server:
                 [str, dict[str, str] | None], Awaitable[types.PromptResponse]
             ],
         ):
-            logger.debug(f"Registering handler for GetPromptRequest")
+            logger.debug("Registering handler for GetPromptRequest")
 
             async def handler(req: GetPromptRequest):
                 prompt_get = await func(req.params.name, req.params.arguments)
@@ -149,7 +154,7 @@ class Server:
 
     def list_resources(self):
         def decorator(func: Callable[[], Awaitable[list[Resource]]]):
-            logger.debug(f"Registering handler for ListResourcesRequest")
+            logger.debug("Registering handler for ListResourcesRequest")
 
             async def handler(_: Any):
                 resources = await func()
@@ -169,7 +174,7 @@ class Server:
         )
 
         def decorator(func: Callable[[AnyUrl], Awaitable[str | bytes]]):
-            logger.debug(f"Registering handler for ReadResourceRequest")
+            logger.debug("Registering handler for ReadResourceRequest")
 
             async def handler(req: ReadResourceRequest):
                 result = await func(req.params.uri)
@@ -204,7 +209,7 @@ class Server:
         from mcp_python.types import EmptyResult
 
         def decorator(func: Callable[[LoggingLevel], Awaitable[None]]):
-            logger.debug(f"Registering handler for SetLevelRequest")
+            logger.debug("Registering handler for SetLevelRequest")
 
             async def handler(req: SetLevelRequest):
                 await func(req.params.level)
@@ -219,7 +224,7 @@ class Server:
         from mcp_python.types import EmptyResult
 
         def decorator(func: Callable[[AnyUrl], Awaitable[None]]):
-            logger.debug(f"Registering handler for SubscribeRequest")
+            logger.debug("Registering handler for SubscribeRequest")
 
             async def handler(req: SubscribeRequest):
                 await func(req.params.uri)
@@ -234,7 +239,7 @@ class Server:
         from mcp_python.types import EmptyResult
 
         def decorator(func: Callable[[AnyUrl], Awaitable[None]]):
-            logger.debug(f"Registering handler for UnsubscribeRequest")
+            logger.debug("Registering handler for UnsubscribeRequest")
 
             async def handler(req: UnsubscribeRequest):
                 await func(req.params.uri)
@@ -249,7 +254,7 @@ class Server:
         from mcp_python.types import CallToolResult
 
         def decorator(func: Callable[..., Awaitable[Any]]):
-            logger.debug(f"Registering handler for CallToolRequest")
+            logger.debug("Registering handler for CallToolRequest")
 
             async def handler(req: CallToolRequest):
                 result = await func(req.params.name, **(req.params.arguments or {}))
@@ -264,7 +269,7 @@ class Server:
         def decorator(
             func: Callable[[str | int, float, float | None], Awaitable[None]],
         ):
-            logger.debug(f"Registering handler for ProgressNotification")
+            logger.debug("Registering handler for ProgressNotification")
 
             async def handler(req: ProgressNotification):
                 await func(
@@ -286,7 +291,7 @@ class Server:
                 Awaitable[Completion | None],
             ],
         ):
-            logger.debug(f"Registering handler for CompleteRequest")
+            logger.debug("Registering handler for CompleteRequest")
 
             async def handler(req: CompleteRequest):
                 completion = await func(req.params.ref, req.params.argument)
@@ -307,10 +312,12 @@ class Server:
         self,
         read_stream: MemoryObjectReceiveStream[JSONRPCMessage | Exception],
         write_stream: MemoryObjectSendStream[JSONRPCMessage],
-        initialization_options: types.InitializationOptions
+        initialization_options: types.InitializationOptions,
     ):
         with warnings.catch_warnings(record=True) as w:
-            async with ServerSession(read_stream, write_stream, initialization_options) as session:
+            async with ServerSession(
+                read_stream, write_stream, initialization_options
+            ) as session:
                 async for message in session.incoming_messages:
                     logger.debug(f"Received message: {message}")
 
@@ -359,14 +366,16 @@ class Server:
 
                                 handler = self.notification_handlers[type(notify)]
                                 logger.debug(
-                                    f"Dispatching notification of type {type(notify).__name__}"
+                                    f"Dispatching notification of type "
+                                    f"{type(notify).__name__}"
                                 )
 
                                 try:
                                     await handler(notify)
                                 except Exception as err:
                                     logger.error(
-                                        f"Uncaught exception in notification handler: {err}"
+                                        f"Uncaught exception in notification handler: "
+                                        f"{err}"
                                     )
 
                     for warning in w:

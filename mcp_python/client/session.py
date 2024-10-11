@@ -62,7 +62,8 @@ class ClientSession(
 
         if result.protocolVersion != SUPPORTED_PROTOCOL_VERSION:
             raise RuntimeError(
-                f"Unsupported protocol version from the server: {result.protocolVersion}"
+                "Unsupported protocol version from the server: "
+                f"{result.protocolVersion}"
             )
 
         await self.send_notification(

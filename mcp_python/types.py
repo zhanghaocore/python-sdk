@@ -6,14 +6,19 @@ from pydantic.networks import AnyUrl
 """
 Model Context Protocol bindings for Python
 
-These bindings were generated from https://github.com/anthropic-experimental/mcp-spec, using Claude, with a prompt something like the following:
+These bindings were generated from https://github.com/anthropic-experimental/mcp-spec,
+using Claude, with a prompt something like the following:
 
-Generate idiomatic Python bindings for this schema for MCP, or the "Model Context Protocol." The schema is defined in TypeScript, but there's also a JSON Schema version for reference.
+Generate idiomatic Python bindings for this schema for MCP, or the "Model Context
+Protocol." The schema is defined in TypeScript, but there's also a JSON Schema version
+for reference.
 
 * For the bindings, let's use Pydantic V2 models.
-* Each model should allow extra fields everywhere, by specifying `model_config = ConfigDict(extra='allow')`. Do this in every case, instead of a custom base class.
+* Each model should allow extra fields everywhere, by specifying `model_config =
+  ConfigDict(extra='allow')`. Do this in every case, instead of a custom base class.
 * Union types should be represented with a Pydantic `RootModel`.
-* Define additional model classes instead of using dictionaries. Do this even if they're not separate types in the schema.
+* Define additional model classes instead of using dictionaries. Do this even if they're
+  not separate types in the schema.
 """
 
 
@@ -24,7 +29,10 @@ class RequestParams(BaseModel):
     class Meta(BaseModel):
         progressToken: ProgressToken | None = None
         """
-        If specified, the caller is requesting out-of-band progress notifications for this request (as represented by notifications/progress). The value of this parameter is an opaque token that will be attached to any subsequent notifications. The receiver is not obligated to provide these notifications.
+        If specified, the caller is requesting out-of-band progress notifications for
+        this request (as represented by notifications/progress). The value of this
+        parameter is an opaque token that will be attached to any subsequent
+        notifications. The receiver is not obligated to provide these notifications.
         """
 
         model_config = ConfigDict(extra="allow")
@@ -38,8 +46,10 @@ class NotificationParams(BaseModel):
 
     _meta: Meta | None = None
     """
-    This parameter name is reserved by MCP to allow clients and servers to attach additional metadata to their notifications.
+    This parameter name is reserved by MCP to allow clients and servers to attach
+    additional metadata to their notifications.
     """
+
 
 RequestParamsT = TypeVar("RequestParamsT", bound=RequestParams)
 NotificationParamsT = TypeVar("NotificationParamsT", bound=NotificationParams)
@@ -68,7 +78,8 @@ class Result(BaseModel):
 
     _meta: dict[str, Any] | None = None
     """
-    This result property is reserved by the protocol to allow clients and servers to attach additional metadata to their responses.
+    This result property is reserved by the protocol to allow clients and servers to
+    attach additional metadata to their responses.
     """
 
 
@@ -112,9 +123,15 @@ class ErrorData(BaseModel):
     code: int
     """The error type that occurred."""
     message: str
-    """A short description of the error. The message SHOULD be limited to a concise single sentence."""
+    """
+    A short description of the error. The message SHOULD be limited to a concise single
+    sentence.
+    """
     data: Any | None = None
-    """Additional information about the error. The value of this member is defined by the sender (e.g. detailed error information, nested errors etc.)."""
+    """
+    Additional information about the error. The value of this member is defined by the
+    sender (e.g. detailed error information, nested errors etc.).
+    """
     model_config = ConfigDict(extra="allow")
 
 
@@ -182,14 +199,17 @@ class InitializeRequestParams(RequestParams):
 
 
 class InitializeRequest(Request):
-    """This request is sent from the client to the server when it first connects, asking it to begin initialization."""
+    """
+    This request is sent from the client to the server when it first connects, asking it
+    to begin initialization.
+    """
 
     method: Literal["initialize"]
     params: InitializeRequestParams
 
 
 class InitializeResult(Result):
-    """After receiving an initialize request from the client, the server sends this response."""
+    """After receiving an initialize request from the client, the server sends this."""
 
     protocolVersion: Literal[1]
     """The version of the Model Context Protocol that the server wants to use."""
@@ -198,14 +218,20 @@ class InitializeResult(Result):
 
 
 class InitializedNotification(Notification):
-    """This notification is sent from the client to the server after initialization has finished."""
+    """
+    This notification is sent from the client to the server after initialization has
+    finished.
+    """
 
     method: Literal["notifications/initialized"]
     params: NotificationParams | None = None
 
 
 class PingRequest(Request):
-    """A ping, issued by either the server or the client, to check that the other party is still alive."""
+    """
+    A ping, issued by either the server or the client, to check that the other party is
+    still alive.
+    """
 
     method: Literal["ping"]
     params: RequestParams | None = None
@@ -215,16 +241,25 @@ class ProgressNotificationParams(NotificationParams):
     """Parameters for progress notifications."""
 
     progressToken: ProgressToken
-    """The progress token which was given in the initial request, used to associate this notification with the request that is proceeding."""
+    """
+    The progress token which was given in the initial request, used to associate this
+    notification with the request that is proceeding.
+    """
     progress: float
-    """The progress thus far. This should increase every time progress is made, even if the total is unknown."""
+    """
+    The progress thus far. This should increase every time progress is made, even if the
+    total is unknown.
+    """
     total: float | None = None
     """Total number of items to process (or total progress required), if known."""
     model_config = ConfigDict(extra="allow")
 
 
 class ProgressNotification(Notification):
-    """An out-of-band notification used to inform the receiver of a progress update for a long-running request."""
+    """
+    An out-of-band notification used to inform the receiver of a progress update for a
+    long-running request.
+    """
 
     method: Literal["notifications/progress"]
     params: ProgressNotificationParams
@@ -251,13 +286,19 @@ class ResourceTemplate(BaseModel):
     """A template description for resources available on the server."""
 
     uriTemplate: str
-    """A URI template (according to RFC 6570) that can be used to construct resource URIs."""
+    """
+    A URI template (according to RFC 6570) that can be used to construct resource
+    URIs.
+    """
     name: str | None = None
     """A human-readable name for the type of resource this template refers to."""
     description: str | None = None
     """A human-readable description of what this template is for."""
     mimeType: str | None = None
-    """The MIME type for all resources that match this template. This should only be included if all resources matching this template have the same type."""
+    """
+    The MIME type for all resources that match this template. This should only be
+    included if all resources matching this template have the same type.
+    """
     model_config = ConfigDict(extra="allow")
 
 
@@ -272,7 +313,10 @@ class ReadResourceRequestParams(RequestParams):
     """Parameters for reading a resource."""
 
     uri: AnyUrl
-    """The URI of the resource to read. The URI can use any protocol; it is up to the server how to interpret it."""
+    """
+    The URI of the resource to read. The URI can use any protocol; it is up to the
+    server how to interpret it.
+    """
     model_config = ConfigDict(extra="allow")
 
 
@@ -297,7 +341,10 @@ class TextResourceContents(ResourceContents):
     """Text contents of a resource."""
 
     text: str
-    """The text of the item. This must only be set if the item can actually be represented as text (not binary data)."""
+    """
+    The text of the item. This must only be set if the item can actually be represented
+    as text (not binary data).
+    """
 
 
 class BlobResourceContents(ResourceContents):
@@ -314,7 +361,10 @@ class ReadResourceResult(Result):
 
 
 class ResourceListChangedNotification(Notification):
-    """An optional notification from the server to the client, informing it that the list of resources it can read from has changed."""
+    """
+    An optional notification from the server to the client, informing it that the list
+    of resources it can read from has changed.
+    """
 
     method: Literal["notifications/resources/list_changed"]
     params: NotificationParams | None = None
@@ -324,12 +374,18 @@ class SubscribeRequestParams(RequestParams):
     """Parameters for subscribing to a resource."""
 
     uri: AnyUrl
-    """The URI of the resource to subscribe to. The URI can use any protocol; it is up to the server how to interpret it."""
+    """
+    The URI of the resource to subscribe to. The URI can use any protocol; it is up to
+    the server how to interpret it.
+    """
     model_config = ConfigDict(extra="allow")
 
 
 class SubscribeRequest(Request):
-    """Sent from the client to request resources/updated notifications from the server whenever a particular resource changes."""
+    """
+    Sent from the client to request resources/updated notifications from the server
+    whenever a particular resource changes.
+    """
 
     method: Literal["resources/subscribe"]
     params: SubscribeRequestParams
@@ -344,7 +400,10 @@ class UnsubscribeRequestParams(RequestParams):
 
 
 class UnsubscribeRequest(Request):
-    """Sent from the client to request cancellation of resources/updated notifications from the server."""
+    """
+    Sent from the client to request cancellation of resources/updated notifications from
+    the server.
+    """
 
     method: Literal["resources/unsubscribe"]
     params: UnsubscribeRequestParams
@@ -354,19 +413,25 @@ class ResourceUpdatedNotificationParams(NotificationParams):
     """Parameters for resource update notifications."""
 
     uri: AnyUrl
-    """The URI of the resource that has been updated. This might be a sub-resource of the one that the client actually subscribed to."""
+    """
+    The URI of the resource that has been updated. This might be a sub-resource of the
+    one that the client actually subscribed to.
+    """
     model_config = ConfigDict(extra="allow")
 
 
 class ResourceUpdatedNotification(Notification):
-    """A notification from the server to the client, informing it that a resource has changed and may need to be read again."""
+    """
+    A notification from the server to the client, informing it that a resource has
+    changed and may need to be read again.
+    """
 
     method: Literal["notifications/resources/updated"]
     params: ResourceUpdatedNotificationParams
 
 
 class ListPromptsRequest(Request):
-    """Sent from the client to request a list of prompts and prompt templates the server has."""
+    """Sent from the client to request a list of prompts and prompt templates."""
 
     method: Literal["prompts/list"]
     params: RequestParams | None = None
@@ -435,7 +500,10 @@ class ImageContent(BaseModel):
     data: str
     """The base64-encoded image data."""
     mimeType: str
-    """The MIME type of the image. Different providers may support different image types."""
+    """
+    The MIME type of the image. Different providers may support different
+    image types.
+    """
     model_config = ConfigDict(extra="allow")
 
 
@@ -505,7 +573,10 @@ class CallToolResult(Result):
 
 
 class ToolListChangedNotification(Notification):
-    """An optional notification from the server to the client, informing it that the list of tools it offers has changed."""
+    """
+    An optional notification from the server to the client, informing it that the list
+    of tools it offers has changed.
+    """
 
     method: Literal["notifications/tools/list_changed"]
     params: NotificationParams | None = None
@@ -537,7 +608,10 @@ class LoggingMessageNotificationParams(NotificationParams):
     logger: str | None = None
     """An optional name of the logger issuing this message."""
     data: Any
-    """The data to be logged, such as a string message or an object. Any JSON serializable type is allowed here."""
+    """
+    The data to be logged, such as a string message or an object. Any JSON serializable
+    type is allowed here.
+    """
     model_config = ConfigDict(extra="allow")
 
 
@@ -558,7 +632,10 @@ class CreateMessageRequestParams(RequestParams):
     systemPrompt: str | None = None
     """An optional system prompt the server wants to use for sampling."""
     includeContext: IncludeContext | None = None
-    """A request to include context from one or more MCP servers (including the caller), to be attached to the prompt."""
+    """
+    A request to include context from one or more MCP servers (including the caller), to
+    be attached to the prompt.
+    """
     temperature: float | None = None
     maxTokens: int
     """The maximum number of tokens to sample, as requested by the server."""
@@ -638,9 +715,15 @@ class Completion(BaseModel):
     values: list[str]
     """An array of completion values. Must not exceed 100 items."""
     total: int | None = None
-    """The total number of completion options available. This can exceed the number of values actually sent in the response."""
+    """
+    The total number of completion options available. This can exceed the number of
+    values actually sent in the response.
+    """
     hasMore: bool | None = None
-    """Indicates whether there are additional completion options beyond those provided in the current response, even if the exact total is unknown."""
+    """
+    Indicates whether there are additional completion options beyond those provided in
+    the current response, even if the exact total is unknown.
+    """
     model_config = ConfigDict(extra="allow")
 
 

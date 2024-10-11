@@ -19,11 +19,17 @@ def remove_request_params(url: str) -> str:
 
 
 @asynccontextmanager
-async def sse_client(url: str, headers: dict[str, Any] | None = None, timeout: float = 5, sse_read_timeout: float = 60 * 5):
+async def sse_client(
+    url: str,
+    headers: dict[str, Any] | None = None,
+    timeout: float = 5,
+    sse_read_timeout: float = 60 * 5,
+):
     """
     Client transport for SSE.
 
-    `sse_read_timeout` determines how long (in seconds) the client will wait for a new event before disconnecting. All other HTTP operations are controlled by `timeout`.
+    `sse_read_timeout` determines how long (in seconds) the client will wait for a new
+    event before disconnecting. All other HTTP operations are controlled by `timeout`.
     """
     read_stream: MemoryObjectReceiveStream[JSONRPCMessage | Exception]
     read_stream_writer: MemoryObjectSendStream[JSONRPCMessage | Exception]
@@ -67,7 +73,10 @@ async def sse_client(url: str, headers: dict[str, Any] | None = None, timeout: f
                                             or url_parsed.scheme
                                             != endpoint_parsed.scheme
                                         ):
-                                            error_msg = f"Endpoint origin does not match connection origin: {endpoint_url}"
+                                            error_msg = (
+                                                "Endpoint origin does not match "
+                                                f"connection origin: {endpoint_url}"
+                                            )
                                             logger.error(error_msg)
                                             raise ValueError(error_msg)
 
@@ -104,11 +113,16 @@ async def sse_client(url: str, headers: dict[str, Any] | None = None, timeout: f
                                     logger.debug(f"Sending client message: {message}")
                                     response = await client.post(
                                         endpoint_url,
-                                        json=message.model_dump(by_alias=True, mode="json", exclude_none=True),
+                                        json=message.model_dump(
+                                            by_alias=True,
+                                            mode="json",
+                                            exclude_none=True,
+                                        ),
                                     )
                                     response.raise_for_status()
                                     logger.debug(
-                                        f"Client message sent successfully: {response.status_code}"
+                                        "Client message sent successfully: "
+                                        f"{response.status_code}"
                                     )
                         except Exception as exc:
                             logger.error(f"Error in post_writer: {exc}")

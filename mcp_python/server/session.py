@@ -6,11 +6,11 @@ import anyio.lowlevel
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from pydantic import AnyUrl
 
+from mcp_python.server.types import InitializationOptions
 from mcp_python.shared.session import (
     BaseSession,
     RequestResponder,
 )
-from mcp_python.server.types import InitializationOptions
 from mcp_python.shared.version import SUPPORTED_PROTOCOL_VERSION
 from mcp_python.types import (
     ClientNotification,
@@ -25,7 +25,6 @@ from mcp_python.types import (
     JSONRPCMessage,
     LoggingLevel,
     SamplingMessage,
-    ServerCapabilities,
     ServerNotification,
     ServerRequest,
     ServerResult,
@@ -53,7 +52,7 @@ class ServerSession(
         self,
         read_stream: MemoryObjectReceiveStream[JSONRPCMessage | Exception],
         write_stream: MemoryObjectSendStream[JSONRPCMessage],
-        init_options: InitializationOptions
+        init_options: InitializationOptions,
     ) -> None:
         super().__init__(read_stream, write_stream, ClientRequest, ClientNotification)
         self._initialization_state = InitializationState.NotInitialized
@@ -72,7 +71,7 @@ class ServerSession(
                             capabilities=self._init_options.capabilities,
                             serverInfo=Implementation(
                                 name=self._init_options.server_name,
-                                version=self._init_options.server_version
+                                version=self._init_options.server_version,
                             ),
                         )
                     )

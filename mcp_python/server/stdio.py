@@ -7,14 +7,18 @@ from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStre
 
 from mcp_python.types import JSONRPCMessage
 
+
 @asynccontextmanager
 async def stdio_server(
-    stdin: anyio.AsyncFile[str] | None = None, stdout: anyio.AsyncFile[str] | None = None
+    stdin: anyio.AsyncFile[str] | None = None,
+    stdout: anyio.AsyncFile[str] | None = None,
 ):
     """
-    Server transport for stdio: this communicates with an MCP client by reading from the current process' stdin and writing to stdout.
+    Server transport for stdio: this communicates with an MCP client by reading
+    from the current process' stdin and writing to stdout.
     """
-    # Purposely not using context managers for these, as we don't want to close standard process handles.
+    # Purposely not using context managers for these, as we don't want to close
+    # standard process handles.
     if not stdin:
         stdin = anyio.wrap_file(sys.stdin)
     if not stdout:
