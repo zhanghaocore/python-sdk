@@ -33,7 +33,13 @@ async def test_server_session_initialize():
         nonlocal received_initialized
 
         async with ServerSession(
-            client_to_server_receive, server_to_client_send, InitializationOptions(server_name='mcp_python', server_version='0.1.0', capabilities=ServerCapabilities())
+            client_to_server_receive,
+            server_to_client_send,
+            InitializationOptions(
+                server_name="mcp_python",
+                server_version="0.1.0",
+                capabilities=ServerCapabilities(),
+            ),
         ) as server_session:
             async for message in server_session.incoming_messages:
                 if isinstance(message, Exception):

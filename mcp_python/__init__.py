@@ -37,7 +37,6 @@ from .types import (
     ReadResourceResult,
     Resource,
     ResourceUpdatedNotification,
-    Role as SamplingRole,
     SamplingMessage,
     ServerCapabilities,
     ServerNotification,
@@ -48,6 +47,9 @@ from .types import (
     SubscribeRequest,
     Tool,
     UnsubscribeRequest,
+)
+from .types import (
+    Role as SamplingRole,
 )
 
 __all__ = [

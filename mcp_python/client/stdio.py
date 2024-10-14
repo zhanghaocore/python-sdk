@@ -28,7 +28,8 @@ class StdioServerParameters(BaseModel):
 @asynccontextmanager
 async def stdio_client(server: StdioServerParameters):
     """
-    Client transport for stdio: this will connect to a server by spawning a process and communicating with it over stdin/stdout.
+    Client transport for stdio: this will connect to a server by spawning a
+    process and communicating with it over stdin/stdout.
     """
     read_stream: MemoryObjectReceiveStream[JSONRPCMessage | Exception]
     read_stream_writer: MemoryObjectSendStream[JSONRPCMessage | Exception]
