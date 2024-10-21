@@ -21,8 +21,10 @@ for reference.
   not separate types in the schema.
 """
 
+LATEST_PROTOCOL_VERSION = "2024-10-07";
 
 ProgressToken = str | int
+Cursor = str
 
 
 class RequestParams(BaseModel):
@@ -64,6 +66,14 @@ class Request(BaseModel, Generic[RequestParamsT, MethodT]):
     model_config = ConfigDict(extra="allow")
 
 
+class PaginatedRequest(Request[RequestParamsT, MethodT]):
+    cursor: Cursor | None = None
+    """
+    An opaque token representing the current pagination position.
+    If provided, the server should return results starting after this cursor.
+    """
+
+
 class Notification(BaseModel, Generic[NotificationParamsT, MethodT]):
     """Base class for JSON-RPC notifications."""
 
@@ -80,6 +90,14 @@ class Result(BaseModel):
     """
     This result property is reserved by the protocol to allow clients and servers to
     attach additional metadata to their responses.
+    """
+
+
+class PaginatedResult(Result):
+    nextCursor: Cursor | None = None
+    """
+    An opaque token representing the pagination position after the last returned result.
+    If present, there may be more results available.
     """
 
 
@@ -115,6 +133,7 @@ PARSE_ERROR = -32700
 INVALID_REQUEST = -32600
 METHOD_NOT_FOUND = -32601
 INVALID_PARAMS = -32602
+INTERNAL_ERROR = -32603
 
 
 class ErrorData(BaseModel):
@@ -191,7 +210,7 @@ class ServerCapabilities(BaseModel):
 class InitializeRequestParams(RequestParams):
     """Parameters for the initialize request."""
 
-    protocolVersion: Literal[1]
+    protocolVersion: str | int
     """The latest version of the Model Context Protocol that the client supports."""
     capabilities: ClientCapabilities
     clientInfo: Implementation
@@ -211,7 +230,7 @@ class InitializeRequest(Request):
 class InitializeResult(Result):
     """After receiving an initialize request from the client, the server sends this."""
 
-    protocolVersion: Literal[1]
+    protocolVersion: str | int
     """The version of the Model Context Protocol that the server wants to use."""
     capabilities: ServerCapabilities
     serverInfo: Implementation
@@ -265,7 +284,7 @@ class ProgressNotification(Notification):
     params: ProgressNotificationParams
 
 
-class ListResourcesRequest(Request):
+class ListResourcesRequest(PaginatedRequest):
     """Sent from the client to request a list of resources the server has."""
 
     method: Literal["resources/list"]
@@ -277,6 +296,10 @@ class Resource(BaseModel):
 
     uri: AnyUrl
     """The URI of this resource."""
+    name: str
+    """A human-readable name for this resource."""
+    description: str | None = None
+    """A description of what this resource represents."""
     mimeType: str | None = None
     """The MIME type of this resource, if known."""
     model_config = ConfigDict(extra="allow")
@@ -290,7 +313,7 @@ class ResourceTemplate(BaseModel):
     A URI template (according to RFC 6570) that can be used to construct resource
     URIs.
     """
-    name: str | None = None
+    name: str
     """A human-readable name for the type of resource this template refers to."""
     description: str | None = None
     """A human-readable description of what this template is for."""
@@ -302,11 +325,23 @@ class ResourceTemplate(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-class ListResourcesResult(Result):
+class ListResourcesResult(PaginatedResult):
     """The server's response to a resources/list request from the client."""
 
-    resourceTemplates: list[ResourceTemplate] | None = None
-    resources: list[Resource] | None = None
+    resources: list[Resource]
+
+
+class ListResourceTemplatesRequest(PaginatedRequest):
+    """Sent from the client to request a list of resource templates the server has."""
+
+    method: Literal["resources/templates/list"]
+    params: RequestParams | None = None
+
+
+class ListResourceTemplatesResult(PaginatedResult):
+    """The server's response to a resources/templates/list request from the client."""
+
+    resourceTemplates: list[ResourceTemplate]
 
 
 class ReadResourceRequestParams(RequestParams):
@@ -430,7 +465,7 @@ class ResourceUpdatedNotification(Notification):
     params: ResourceUpdatedNotificationParams
 
 
-class ListPromptsRequest(Request):
+class ListPromptsRequest(PaginatedRequest):
     """Sent from the client to request a list of prompts and prompt templates."""
 
     method: Literal["prompts/list"]
@@ -461,7 +496,7 @@ class Prompt(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-class ListPromptsResult(Result):
+class ListPromptsResult(PaginatedResult):
     """The server's response to a prompts/list request from the client."""
 
     prompts: list[Prompt]
@@ -526,7 +561,17 @@ class GetPromptResult(Result):
     messages: list[SamplingMessage]
 
 
-class ListToolsRequest(Request):
+class PromptListChangedNotification(Notification):
+    """
+    An optional notification from the server to the client, informing it that the list
+    of prompts it offers has changed.
+    """
+
+    method: Literal["notifications/prompts/list_changed"]
+    params: NotificationParams | None = None
+
+
+class ListToolsRequest(PaginatedRequest):
     """Sent from the client to request a list of tools the server has."""
 
     method: Literal["tools/list"]
@@ -545,7 +590,7 @@ class Tool(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-class ListToolsResult(Result):
+class ListToolsResult(PaginatedResult):
     """The server's response to a tools/list request from the client."""
 
     tools: list[Tool]
@@ -742,6 +787,7 @@ class ClientRequest(
         | GetPromptRequest
         | ListPromptsRequest
         | ListResourcesRequest
+        | ListResourceTemplatesRequest
         | ReadResourceRequest
         | SubscribeRequest
         | UnsubscribeRequest
@@ -771,6 +817,7 @@ class ServerNotification(
         | ResourceUpdatedNotification
         | ResourceListChangedNotification
         | ToolListChangedNotification
+        | PromptListChangedNotification
     ]
 ):
     pass
@@ -784,6 +831,7 @@ class ServerResult(
         | GetPromptResult
         | ListPromptsResult
         | ListResourcesResult
+        | ListResourceTemplatesResult
         | ReadResourceResult
         | CallToolResult
         | ListToolsResult
