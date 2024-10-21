@@ -1,4 +1,9 @@
-from mcp_python.types import LATEST_PROTOCOL_VERSION, ClientRequest, JSONRPCMessage, JSONRPCRequest
+from mcp_python.types import (
+    LATEST_PROTOCOL_VERSION,
+    ClientRequest,
+    JSONRPCMessage,
+    JSONRPCRequest,
+)
 
 
 def test_jsonrpc_request():
