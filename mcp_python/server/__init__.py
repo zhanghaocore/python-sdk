@@ -162,7 +162,7 @@ class Server:
             async def handler(_: Any):
                 resources = await func()
                 return ServerResult(
-                    ListResourcesResult(resources=resources, resourceTemplates=None)
+                    ListResourcesResult(resources=resources)
                 )
 
             self.request_handlers[ListResourcesRequest] = handler
