@@ -274,7 +274,7 @@ class Server:
             logger.debug("Registering handler for CallToolRequest")
 
             async def handler(req: CallToolRequest):
-                result = await func(req.params.name, **(req.params.arguments or {}))
+                result = await func(req.params.name, (req.params.arguments or {}))
                 return ServerResult(CallToolResult(toolResult=result))
 
             self.request_handlers[CallToolRequest] = handler
