@@ -1,4 +1,9 @@
-from mcp_python.types import ClientRequest, JSONRPCMessage, JSONRPCRequest
+from mcp_python.types import (
+    LATEST_PROTOCOL_VERSION,
+    ClientRequest,
+    JSONRPCMessage,
+    JSONRPCRequest,
+)
 
 
 def test_jsonrpc_request():
@@ -7,7 +12,7 @@ def test_jsonrpc_request():
         "id": 1,
         "method": "initialize",
         "params": {
-            "protocolVersion": 1,
+            "protocolVersion": LATEST_PROTOCOL_VERSION,
             "capabilities": {"batch": None, "sampling": None},
             "clientInfo": {"name": "mcp_python", "version": "0.1.0"},
         },
@@ -21,4 +26,4 @@ def test_jsonrpc_request():
     assert request.root.id == 1
     assert request.root.method == "initialize"
     assert request.root.params is not None
-    assert request.root.params["protocolVersion"] == 1
+    assert request.root.params["protocolVersion"] == LATEST_PROTOCOL_VERSION

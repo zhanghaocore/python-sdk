@@ -11,8 +11,8 @@ from mcp_python.shared.session import (
     BaseSession,
     RequestResponder,
 )
-from mcp_python.shared.version import SUPPORTED_PROTOCOL_VERSION
 from mcp_python.types import (
+    LATEST_PROTOCOL_VERSION,
     ClientNotification,
     ClientRequest,
     CreateMessageResult,
@@ -67,7 +67,7 @@ class ServerSession(
                 await responder.respond(
                     ServerResult(
                         InitializeResult(
-                            protocolVersion=SUPPORTED_PROTOCOL_VERSION,
+                            protocolVersion=LATEST_PROTOCOL_VERSION,
                             capabilities=self._init_options.capabilities,
                             serverInfo=Implementation(
                                 name=self._init_options.server_name,

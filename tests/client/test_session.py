@@ -3,6 +3,7 @@ import pytest
 
 from mcp_python.client.session import ClientSession
 from mcp_python.types import (
+    LATEST_PROTOCOL_VERSION,
     ClientNotification,
     ClientRequest,
     Implementation,
@@ -41,7 +42,7 @@ async def test_client_session_initialize():
 
         result = ServerResult(
             InitializeResult(
-                protocolVersion=1,
+                protocolVersion=LATEST_PROTOCOL_VERSION,
                 capabilities=ServerCapabilities(
                     logging=None,
                     resources=None,
@@ -88,7 +89,7 @@ async def test_client_session_initialize():
 
     # Assert the result
     assert isinstance(result, InitializeResult)
-    assert result.protocolVersion == 1
+    assert result.protocolVersion == LATEST_PROTOCOL_VERSION
     assert isinstance(result.capabilities, ServerCapabilities)
     assert result.serverInfo == Implementation(name="mock-server", version="0.1.0")
 

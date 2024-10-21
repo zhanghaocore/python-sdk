@@ -2,8 +2,9 @@ from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStre
 from pydantic import AnyUrl
 
 from mcp_python.shared.session import BaseSession
-from mcp_python.shared.version import SUPPORTED_PROTOCOL_VERSION
+from mcp_python.shared.version import SUPPORTED_PROTOCOL_VERSIONS
 from mcp_python.types import (
+    LATEST_PROTOCOL_VERSION,
     CallToolResult,
     ClientCapabilities,
     ClientNotification,
@@ -49,7 +50,7 @@ class ClientSession(
                 InitializeRequest(
                     method="initialize",
                     params=InitializeRequestParams(
-                        protocolVersion=SUPPORTED_PROTOCOL_VERSION,
+                        protocolVersion=LATEST_PROTOCOL_VERSION,
                         capabilities=ClientCapabilities(
                             sampling=None, experimental=None
                         ),
@@ -60,7 +61,7 @@ class ClientSession(
             InitializeResult,
         )
 
-        if result.protocolVersion != SUPPORTED_PROTOCOL_VERSION:
+        if result.protocolVersion not in SUPPORTED_PROTOCOL_VERSIONS:
             raise RuntimeError(
                 "Unsupported protocol version from the server: "
                 f"{result.protocolVersion}"
