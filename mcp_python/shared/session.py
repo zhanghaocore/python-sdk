@@ -1,8 +1,10 @@
 from contextlib import AbstractAsyncContextManager
+from datetime import timedelta
 from typing import Generic, TypeVar
 
 import anyio
 import anyio.lowlevel
+import httpx
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from pydantic import BaseModel
 
@@ -87,6 +89,8 @@ class BaseSession(
         write_stream: MemoryObjectSendStream[JSONRPCMessage],
         receive_request_type: type[ReceiveRequestT],
         receive_notification_type: type[ReceiveNotificationT],
+        # If none, reading will never time out
+        read_timeout_seconds: timedelta | None = None,
     ) -> None:
         self._read_stream = read_stream
         self._write_stream = write_stream
@@ -94,6 +98,7 @@ class BaseSession(
         self._request_id = 0
         self._receive_request_type = receive_request_type
         self._receive_notification_type = receive_notification_type
+        self._read_timeout_seconds = read_timeout_seconds
 
         self._incoming_message_stream_writer, self._incoming_message_stream_reader = (
             anyio.create_memory_object_stream[
@@ -147,7 +152,25 @@ class BaseSession(
 
         await self._write_stream.send(JSONRPCMessage(jsonrpc_request))
 
-        response_or_error = await response_stream_reader.receive()
+        try:
+            with anyio.fail_after(
+                None if self._read_timeout_seconds is None
+                else self._read_timeout_seconds.total_seconds()
+            ):
+                response_or_error = await response_stream_reader.receive()
+        except TimeoutError:
+            raise McpError(
+                ErrorData(
+                    code=httpx.codes.REQUEST_TIMEOUT,
+                    message=(
+                        f"Timed out while waiting for response to "
+                        f"{request.__class__.__name__}. Waited "
+                        f"{self._read_timeout_seconds} seconds."
+                    ),
+                )
+
+            )
+
         if isinstance(response_or_error, JSONRPCError):
             raise McpError(response_or_error.error)
         else:
