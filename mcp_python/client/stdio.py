@@ -10,7 +10,6 @@ from pydantic import BaseModel, Field
 
 from mcp_python.types import JSONRPCMessage
 
-
 # Environment variables to inherit by default
 DEFAULT_INHERITED_ENV_VARS = (
     ["APPDATA", "HOMEDRIVE", "HOMEPATH", "LOCALAPPDATA", "PATH",
@@ -22,7 +21,10 @@ DEFAULT_INHERITED_ENV_VARS = (
 
 
 def get_default_environment() -> dict[str, str]:
-    """Returns a default environment object including only environment variables deemed safe to inherit."""
+    """
+    Returns a default environment object including only environment variables deemed
+    safe to inherit.
+    """
     env: dict[str, str] = {}
 
     for key in DEFAULT_INHERITED_ENV_VARS:
