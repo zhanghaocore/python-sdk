@@ -11,6 +11,7 @@ TEST_INITIALIZATION_OPTIONS = InitializationOptions(
     capabilities=ServerCapabilities(),
 )
 
+
 @pytest.fixture
 def mcp_server() -> Server:
     server = Server(name="test_server")
@@ -21,7 +22,7 @@ def mcp_server() -> Server:
             Resource(
                 uri=AnyUrl("memory://test"),
                 name="Test Resource",
-                description="A test resource"
+                description="A test resource",
             )
         ]
 

@@ -654,7 +654,9 @@ class ToolListChangedNotification(Notification):
     params: NotificationParams | None = None
 
 
-LoggingLevel = Literal["debug", "info", "notice", "warning", "error", "critical", "alert", "emergency"]
+LoggingLevel = Literal[
+    "debug", "info", "notice", "warning", "error", "critical", "alert", "emergency"
+]
 
 
 class SetLevelRequestParams(RequestParams):
@@ -708,7 +710,8 @@ class ModelHint(BaseModel):
 
 class ModelPreferences(BaseModel):
     """
-    The server's preferences for model selection, requested of the client during sampling.
+    The server's preferences for model selection, requested of the client during
+    sampling.
 
     Because LLMs can vary along multiple dimensions, choosing the "best" model is
     rarely straightforward.  Different models excel in different areas—some are
@@ -761,7 +764,10 @@ class CreateMessageRequestParams(RequestParams):
 
     messages: list[SamplingMessage]
     modelPreferences: ModelPreferences | None = None
-    """The server's preferences for which model to select. The client MAY ignore these preferences."""
+    """
+    The server's preferences for which model to select. The client MAY ignore
+    these preferences.
+    """
     systemPrompt: str | None = None
     """An optional system prompt the server wants to use for sampling."""
     includeContext: IncludeContext | None = None
@@ -911,9 +917,12 @@ class ListRootsResult(Result):
 
 class RootsListChangedNotification(Notification):
     """
-    A notification from the client to the server, informing it that the list of roots has changed.
-    This notification should be sent whenever the client adds, removes, or modifies any root.
-    The server should then request an updated list of roots using the ListRootsRequest.
+    A notification from the client to the server, informing it that the list of
+    roots has changed.
+
+    This notification should be sent whenever the client adds, removes, or
+    modifies any root. The server should then request an updated list of roots
+    using the ListRootsRequest.
     """
 
     method: Literal["notifications/roots/list_changed"]
@@ -940,7 +949,11 @@ class ClientRequest(
     pass
 
 
-class ClientNotification(RootModel[ProgressNotification | InitializedNotification | RootsListChangedNotification]):
+class ClientNotification(
+    RootModel[
+        ProgressNotification | InitializedNotification | RootsListChangedNotification
+    ]
+):
     pass
 
 

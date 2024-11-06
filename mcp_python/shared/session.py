@@ -154,7 +154,8 @@ class BaseSession(
 
         try:
             with anyio.fail_after(
-                None if self._read_timeout_seconds is None
+                None
+                if self._read_timeout_seconds is None
                 else self._read_timeout_seconds.total_seconds()
             ):
                 response_or_error = await response_stream_reader.receive()
@@ -168,7 +169,6 @@ class BaseSession(
                         f"{self._read_timeout_seconds} seconds."
                     ),
                 )
-
             )
 
         if isinstance(response_or_error, JSONRPCError):

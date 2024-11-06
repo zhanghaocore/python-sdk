@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
-from pydantic import AnyUrl, FileUrl
+from pydantic import AnyUrl
 
 from mcp_python.shared.session import BaseSession
 from mcp_python.shared.version import SUPPORTED_PROTOCOL_VERSIONS
@@ -21,7 +21,6 @@ from mcp_python.types import (
     JSONRPCMessage,
     ListPromptsResult,
     ListResourcesResult,
-    ListRootsResult,
     ListToolsResult,
     LoggingLevel,
     PromptReference,
@@ -71,9 +70,11 @@ class ClientSession(
                             sampling=None,
                             experimental=None,
                             roots={
-                                # TODO: Should this be based on whether we _will_ send notifications, or only whether they're supported?
+                                # TODO: Should this be based on whether we
+                                # _will_ send notifications, or only whether
+                                # they're supported?
                                 "listChanged": True
-                            }
+                            },
                         ),
                         clientInfo=Implementation(name="mcp_python", version="0.1.0"),
                     ),
@@ -246,7 +247,9 @@ class ClientSession(
             ListPromptsResult,
         )
 
-    async def get_prompt(self, name: str, arguments: dict[str, str] | None = None) -> GetPromptResult:
+    async def get_prompt(
+        self, name: str, arguments: dict[str, str] | None = None
+    ) -> GetPromptResult:
         """Send a prompts/get request."""
         from mcp_python.types import GetPromptRequest, GetPromptRequestParams
 
@@ -260,9 +263,15 @@ class ClientSession(
             GetPromptResult,
         )
 
-    async def complete(self, ref: ResourceReference | PromptReference, argument: dict) -> CompleteResult:
+    async def complete(
+        self, ref: ResourceReference | PromptReference, argument: dict
+    ) -> CompleteResult:
         """Send a completion/complete request."""
-        from mcp_python.types import CompleteRequest, CompleteRequestParams, CompletionArgument
+        from mcp_python.types import (
+            CompleteRequest,
+            CompleteRequestParams,
+            CompletionArgument,
+        )
 
         return await self.send_request(
             ClientRequest(
