@@ -1,5 +1,5 @@
 """
-This module provides simpler types to use with the server for managing prompts.
+This module provides simpler types to use with the server for managing prompts and tools.
 """
 
 from dataclasses import dataclass
@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from mcp_python.types import Role, ServerCapabilities
+from mcp_python.types import Role, ServerCapabilities, TextResourceContents, BlobResourceContents
 
 
 @dataclass
@@ -18,9 +18,14 @@ class ImageContent:
 
 
 @dataclass
+class EmbeddedResource:
+    resource: TextResourceContents | BlobResourceContents
+
+
+@dataclass
 class Message:
     role: Role
-    content: str | ImageContent
+    content: str | ImageContent | EmbeddedResource
 
 
 @dataclass

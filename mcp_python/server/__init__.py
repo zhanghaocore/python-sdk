@@ -42,6 +42,9 @@ from mcp_python.types import (
     SubscribeRequest,
     Tool,
     UnsubscribeRequest,
+    TextContent,
+    EmbeddedResource,
+    PromptMessage,
 )
 
 logger = logging.getLogger(__name__)
@@ -117,8 +120,6 @@ class Server:
             GetPromptRequest,
             GetPromptResult,
             ImageContent,
-            SamplingMessage,
-            TextContent,
         )
         from mcp_python.types import (
             Role as Role,
@@ -133,7 +134,7 @@ class Server:
 
             async def handler(req: GetPromptRequest):
                 prompt_get = await func(req.params.name, req.params.arguments)
-                messages: list[SamplingMessage] = []
+                messages: list[PromptMessage] = []
                 for message in prompt_get.messages:
                     match message.content:
                         case str() as text_content:
@@ -144,15 +145,20 @@ class Server:
                                 data=img_content.data,
                                 mimeType=img_content.mime_type,
                             )
+                        case types.EmbeddedResource() as resource:
+                            content = EmbeddedResource(
+                                type="resource",
+                                resource=resource.resource
+                            )
                         case _:
                             raise ValueError(
                                 f"Unexpected content type: {type(message.content)}"
                             )
 
-                    sampling_message = SamplingMessage(
+                    prompt_message = PromptMessage(
                         role=message.role, content=content
                     )
-                    messages.append(sampling_message)
+                    messages.append(prompt_message)
 
                 return ServerResult(
                     GetPromptResult(description=prompt_get.desc, messages=messages)
@@ -276,14 +282,46 @@ class Server:
         return decorator
 
     def call_tool(self):
-        from mcp_python.types import CallToolResult
+        from mcp_python.types import CallToolResult, TextContent, ImageContent, EmbeddedResource
 
-        def decorator(func: Callable[..., Awaitable[Any]]):
+        def decorator(
+            func: Callable[..., Awaitable[list[str | types.ImageContent | types.EmbeddedResource]]]
+        ):
             logger.debug("Registering handler for CallToolRequest")
 
             async def handler(req: CallToolRequest):
-                result = await func(req.params.name, (req.params.arguments or {}))
-                return ServerResult(CallToolResult(toolResult=result))
+                try:
+                    results = await func(req.params.name, (req.params.arguments or {}))
+                    content = []
+                    for result in results:
+                        match result:
+                            case str() as text:
+                                content.append(TextContent(type="text", text=text))
+                            case types.ImageContent() as img:
+                                content.append(ImageContent(
+                                    type="image",
+                                    data=img.data,
+                                    mimeType=img.mime_type
+                                ))
+                            case types.EmbeddedResource() as resource:
+                                content.append(EmbeddedResource(
+                                    type="resource",
+                                    resource=resource.resource
+                                ))
+
+                    return ServerResult(
+                        CallToolResult(
+                            content=content,
+                            isError=False
+                        )
+                    )
+                except Exception as e:
+                    return ServerResult(
+                        CallToolResult(
+                            content=[TextContent(type="text", text=str(e))],
+                            isError=True
+                        )
+                    )
 
             self.request_handlers[CallToolRequest] = handler
             return func
