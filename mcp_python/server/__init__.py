@@ -28,22 +28,26 @@ from mcp_python.types import (
     ListResourcesResult,
     ListToolsRequest,
     ListToolsResult,
+    LoggingCapability,
     LoggingLevel,
     PingRequest,
     ProgressNotification,
     Prompt,
     PromptMessage,
     PromptReference,
+    PromptsCapability,
     ReadResourceRequest,
     ReadResourceResult,
     Resource,
     ResourceReference,
+    ResourcesCapability,
     ServerCapabilities,
     ServerResult,
     SetLevelRequest,
     SubscribeRequest,
     TextContent,
     Tool,
+    ToolsCapability,
     UnsubscribeRequest,
 )
 
@@ -54,6 +58,18 @@ request_ctx: contextvars.ContextVar[RequestContext] = contextvars.ContextVar(
 )
 
 
+class NotificationOptions:
+    def __init__(
+        self,
+        prompts_changed: bool = False,
+        resources_changed: bool = False,
+        tools_changed: bool = False,
+    ):
+        self.prompts_changed = prompts_changed
+        self.resources_changed = resources_changed
+        self.tools_changed = tools_changed
+
+
 class Server:
     def __init__(self, name: str):
         self.name = name
@@ -61,9 +77,14 @@ class Server:
             PingRequest: _ping_handler,
         }
         self.notification_handlers: dict[type, Callable[..., Awaitable[None]]] = {}
+        self.notification_options = NotificationOptions()
         logger.debug(f"Initializing server '{name}'")
 
-    def create_initialization_options(self) -> types.InitializationOptions:
+    def create_initialization_options(
+        self,
+        notification_options: NotificationOptions | None = None,
+        experimental_capabilities: dict[str, dict[str, Any]] | None = None,
+    ) -> types.InitializationOptions:
         """Create initialization options from this server instance."""
 
         def pkg_version(package: str) -> str:
@@ -81,20 +102,51 @@ class Server:
         return types.InitializationOptions(
             server_name=self.name,
             server_version=pkg_version("mcp_python"),
-            capabilities=self.get_capabilities(),
+            capabilities=self.get_capabilities(
+                notification_options or NotificationOptions(),
+                experimental_capabilities or {},
+            ),
         )
 
-    def get_capabilities(self) -> ServerCapabilities:
+    def get_capabilities(
+        self,
+        notification_options: NotificationOptions,
+        experimental_capabilities: dict[str, dict[str, Any]],
+    ) -> ServerCapabilities:
         """Convert existing handlers to a ServerCapabilities object."""
+        prompts_capability = None
+        resources_capability = None
+        tools_capability = None
+        logging_capability = None
 
-        def get_capability(req_type: type) -> dict[str, Any] | None:
-            return {} if req_type in self.request_handlers else None
+        # Set prompt capabilities if handler exists
+        if ListPromptsRequest in self.request_handlers:
+            prompts_capability = PromptsCapability(
+                listChanged=notification_options.prompts_changed
+            )
+
+        # Set resource capabilities if handler exists
+        if ListResourcesRequest in self.request_handlers:
+            resources_capability = ResourcesCapability(
+                subscribe=False, listChanged=notification_options.resources_changed
+            )
+
+        # Set tool capabilities if handler exists
+        if ListToolsRequest in self.request_handlers:
+            tools_capability = ToolsCapability(
+                listChanged=notification_options.tools_changed
+            )
+
+        # Set logging capabilities if handler exists
+        if SetLevelRequest in self.request_handlers:
+            logging_capability = LoggingCapability()
 
         return ServerCapabilities(
-            prompts=get_capability(ListPromptsRequest),
-            resources=get_capability(ListResourcesRequest),
-            tools=get_capability(ListToolsRequest),
-            logging=get_capability(SetLevelRequest),
+            prompts=prompts_capability,
+            resources=resources_capability,
+            tools=tools_capability,
+            logging=logging_capability,
+            experimental=experimental_capabilities,
         )
 
     @property

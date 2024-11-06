@@ -2,13 +2,15 @@ import anyio
 import pytest
 
 from mcp_python.client.session import ClientSession
-from mcp_python.server import Server
+from mcp_python.server import NotificationOptions, Server
 from mcp_python.server.session import ServerSession
 from mcp_python.server.types import InitializationOptions
 from mcp_python.types import (
     ClientNotification,
     InitializedNotification,
     JSONRPCMessage,
+    PromptsCapability,
+    ResourcesCapability,
     ServerCapabilities,
 )
 
@@ -71,9 +73,11 @@ async def test_server_session_initialize():
 @pytest.mark.anyio
 async def test_server_capabilities():
     server = Server("test")
+    notification_options = NotificationOptions()
+    experimental_capabilities = {}
 
     # Initially no capabilities
-    caps = server.get_capabilities()
+    caps = server.get_capabilities(notification_options, experimental_capabilities)
     assert caps.prompts is None
     assert caps.resources is None
 
@@ -82,8 +86,8 @@ async def test_server_capabilities():
     async def list_prompts():
         return []
 
-    caps = server.get_capabilities()
-    assert caps.prompts == {}
+    caps = server.get_capabilities(notification_options, experimental_capabilities)
+    assert caps.prompts == PromptsCapability(listChanged=False)
     assert caps.resources is None
 
     # Add a resources handler
@@ -91,6 +95,6 @@ async def test_server_capabilities():
     async def list_resources():
         return []
 
-    caps = server.get_capabilities()
-    assert caps.prompts == {}
-    assert caps.resources == {}
+    caps = server.get_capabilities(notification_options, experimental_capabilities)
+    assert caps.prompts == PromptsCapability(listChanged=False)
+    assert caps.resources == ResourcesCapability(subscribe=False, listChanged=False)
