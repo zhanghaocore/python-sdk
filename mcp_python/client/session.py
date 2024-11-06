@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
-from pydantic import AnyUrl
+from pydantic import AnyUrl, FileUrl
 
 from mcp_python.shared.session import BaseSession
 from mcp_python.shared.version import SUPPORTED_PROTOCOL_VERSIONS
@@ -12,14 +12,21 @@ from mcp_python.types import (
     ClientNotification,
     ClientRequest,
     ClientResult,
+    CompleteResult,
     EmptyResult,
+    GetPromptResult,
     Implementation,
     InitializedNotification,
     InitializeResult,
     JSONRPCMessage,
+    ListPromptsResult,
     ListResourcesResult,
+    ListRootsResult,
+    ListToolsResult,
     LoggingLevel,
+    PromptReference,
     ReadResourceResult,
+    ResourceReference,
     ServerNotification,
     ServerRequest,
 )
@@ -61,7 +68,12 @@ class ClientSession(
                     params=InitializeRequestParams(
                         protocolVersion=LATEST_PROTOCOL_VERSION,
                         capabilities=ClientCapabilities(
-                            sampling=None, experimental=None
+                            sampling=None,
+                            experimental=None,
+                            roots={
+                                # TODO: Should this be based on whether we _will_ send notifications, or only whether they're supported?
+                                "listChanged": True
+                            }
                         ),
                         clientInfo=Implementation(name="mcp_python", version="0.1.0"),
                     ),
@@ -219,4 +231,73 @@ class ClientSession(
                 )
             ),
             CallToolResult,
+        )
+
+    async def list_prompts(self) -> ListPromptsResult:
+        """Send a prompts/list request."""
+        from mcp_python.types import ListPromptsRequest
+
+        return await self.send_request(
+            ClientRequest(
+                ListPromptsRequest(
+                    method="prompts/list",
+                )
+            ),
+            ListPromptsResult,
+        )
+
+    async def get_prompt(self, name: str, arguments: dict[str, str] | None = None) -> GetPromptResult:
+        """Send a prompts/get request."""
+        from mcp_python.types import GetPromptRequest, GetPromptRequestParams
+
+        return await self.send_request(
+            ClientRequest(
+                GetPromptRequest(
+                    method="prompts/get",
+                    params=GetPromptRequestParams(name=name, arguments=arguments),
+                )
+            ),
+            GetPromptResult,
+        )
+
+    async def complete(self, ref: ResourceReference | PromptReference, argument: dict) -> CompleteResult:
+        """Send a completion/complete request."""
+        from mcp_python.types import CompleteRequest, CompleteRequestParams, CompletionArgument
+
+        return await self.send_request(
+            ClientRequest(
+                CompleteRequest(
+                    method="completion/complete",
+                    params=CompleteRequestParams(
+                        ref=ref,
+                        argument=CompletionArgument(**argument),
+                    ),
+                )
+            ),
+            CompleteResult,
+        )
+
+    async def list_tools(self) -> ListToolsResult:
+        """Send a tools/list request."""
+        from mcp_python.types import ListToolsRequest
+
+        return await self.send_request(
+            ClientRequest(
+                ListToolsRequest(
+                    method="tools/list",
+                )
+            ),
+            ListToolsResult,
+        )
+
+    async def send_roots_list_changed(self) -> None:
+        """Send a roots/list_changed notification."""
+        from mcp_python.types import RootsListChangedNotification
+
+        await self.send_notification(
+            ClientNotification(
+                RootsListChangedNotification(
+                    method="notifications/roots/list_changed",
+                )
+            )
         )
