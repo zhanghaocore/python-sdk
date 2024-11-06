@@ -136,7 +136,7 @@ class ServerSession(
             )
         )
 
-    async def request_create_message(
+    async def create_message(
         self,
         messages: list[SamplingMessage],
         *,
