@@ -26,6 +26,7 @@ from mcp_python.types import (
     PromptReference,
     ReadResourceResult,
     ResourceReference,
+    RootsCapability,
     ServerNotification,
     ServerRequest,
 )
@@ -69,12 +70,12 @@ class ClientSession(
                         capabilities=ClientCapabilities(
                             sampling=None,
                             experimental=None,
-                            roots={
+                            roots=RootsCapability(
                                 # TODO: Should this be based on whether we
                                 # _will_ send notifications, or only whether
                                 # they're supported?
-                                "listChanged": True
-                            },
+                                listChanged=True
+                            ),
                         ),
                         clientInfo=Implementation(name="mcp_python", version="0.1.0"),
                     ),

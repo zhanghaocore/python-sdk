@@ -12,9 +12,19 @@ from mcp_python.types import JSONRPCMessage
 
 # Environment variables to inherit by default
 DEFAULT_INHERITED_ENV_VARS = (
-    ["APPDATA", "HOMEDRIVE", "HOMEPATH", "LOCALAPPDATA", "PATH",
-     "PROCESSOR_ARCHITECTURE", "SYSTEMDRIVE", "SYSTEMROOT", "TEMP",
-     "USERNAME", "USERPROFILE"]
+    [
+        "APPDATA",
+        "HOMEDRIVE",
+        "HOMEPATH",
+        "LOCALAPPDATA",
+        "PATH",
+        "PROCESSOR_ARCHITECTURE",
+        "SYSTEMDRIVE",
+        "SYSTEMROOT",
+        "TEMP",
+        "USERNAME",
+        "USERPROFILE",
+    ]
     if sys.platform == "win32"
     else ["HOME", "LOGNAME", "PATH", "SHELL", "TERM", "USER"]
 )
@@ -74,7 +84,7 @@ async def stdio_client(server: StdioServerParameters):
     process = await anyio.open_process(
         [server.command, *server.args],
         env=server.env if server.env is not None else get_default_environment(),
-        stderr=sys.stderr
+        stderr=sys.stderr,
     )
 
     async def stdout_reader():

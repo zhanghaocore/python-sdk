@@ -184,15 +184,61 @@ class Implementation(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+class RootsCapability(BaseModel):
+    """Capability for root operations."""
+
+    listChanged: bool | None = None
+    """Whether the client supports notifications for changes to the roots list."""
+    model_config = ConfigDict(extra="allow")
+
+
+class SamplingCapability(BaseModel):
+    """Capability for logging operations."""
+
+    model_config = ConfigDict(extra="allow")
+
+
 class ClientCapabilities(BaseModel):
     """Capabilities a client may support."""
 
     experimental: dict[str, dict[str, Any]] | None = None
     """Experimental, non-standard capabilities that the client supports."""
-    sampling: dict[str, Any] | None = None
+    sampling: SamplingCapability | None = None
     """Present if the client supports sampling from an LLM."""
-    roots: dict[str, Any] | None = None
+    roots: RootsCapability | None = None
     """Present if the client supports listing roots."""
+    model_config = ConfigDict(extra="allow")
+
+
+class PromptsCapability(BaseModel):
+    """Capability for prompts operations."""
+
+    listChanged: bool | None = None
+    """Whether this server supports notifications for changes to the prompt list."""
+    model_config = ConfigDict(extra="allow")
+
+
+class ResourcesCapability(BaseModel):
+    """Capability for resources operations."""
+
+    subscribe: bool | None = None
+    """Whether this server supports subscribing to resource updates."""
+    listChanged: bool | None = None
+    """Whether this server supports notifications for changes to the resource list."""
+    model_config = ConfigDict(extra="allow")
+
+
+class ToolsCapability(BaseModel):
+    """Capability for tools operations."""
+
+    listChanged: bool | None = None
+    """Whether this server supports notifications for changes to the tool list."""
+    model_config = ConfigDict(extra="allow")
+
+
+class LoggingCapability(BaseModel):
+    """Capability for logging operations."""
+
     model_config = ConfigDict(extra="allow")
 
 
@@ -201,13 +247,13 @@ class ServerCapabilities(BaseModel):
 
     experimental: dict[str, dict[str, Any]] | None = None
     """Experimental, non-standard capabilities that the server supports."""
-    logging: dict[str, Any] | None = None
+    logging: LoggingCapability | None = None
     """Present if the server supports sending log messages to the client."""
-    prompts: dict[str, Any] | None = None
+    prompts: PromptsCapability | None = None
     """Present if the server offers any prompt templates."""
-    resources: dict[str, Any] | None = None
+    resources: ResourcesCapability | None = None
     """Present if the server offers any resources to read."""
-    tools: dict[str, Any] | None = None
+    tools: ToolsCapability | None = None
     """Present if the server offers any tools to call."""
     model_config = ConfigDict(extra="allow")
 
