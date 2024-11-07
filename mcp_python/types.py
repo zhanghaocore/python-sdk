@@ -641,7 +641,7 @@ class CallToolResult(Result):
     """The server's response to a tool call."""
 
     content: list[TextContent | ImageContent | EmbeddedResource]
-    isError: bool
+    isError: bool = False
 
 
 class ToolListChangedNotification(Notification):
