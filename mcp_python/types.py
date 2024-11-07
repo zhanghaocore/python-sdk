@@ -1,12 +1,12 @@
 from typing import Any, Generic, Literal, TypeVar
 
-from pydantic import BaseModel, ConfigDict, RootModel
+from pydantic import BaseModel, ConfigDict, FileUrl, RootModel
 from pydantic.networks import AnyUrl
 
 """
 Model Context Protocol bindings for Python
 
-These bindings were generated from https://github.com/anthropic-experimental/mcp-spec,
+These bindings were generated from https://github.com/modelcontextprotocol/specification,
 using Claude, with a prompt something like the following:
 
 Generate idiomatic Python bindings for this schema for MCP, or the "Model Context
@@ -21,7 +21,7 @@ for reference.
   not separate types in the schema.
 """
 
-LATEST_PROTOCOL_VERSION = "2024-10-07"
+LATEST_PROTOCOL_VERSION = "2024-11-05"
 
 ProgressToken = str | int
 Cursor = str
@@ -191,6 +191,8 @@ class ClientCapabilities(BaseModel):
     """Experimental, non-standard capabilities that the client supports."""
     sampling: dict[str, Any] | None = None
     """Present if the client supports sampling from an LLM."""
+    roots: dict[str, Any] | None = None
+    """Present if the client supports listing roots."""
     model_config = ConfigDict(extra="allow")
 
 
@@ -556,12 +558,33 @@ class SamplingMessage(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+class EmbeddedResource(BaseModel):
+    """
+    The contents of a resource, embedded into a prompt or tool call result.
+
+    It is up to the client how best to render embedded resources for the benefit
+    of the LLM and/or the user.
+    """
+
+    type: Literal["resource"]
+    resource: TextResourceContents | BlobResourceContents
+    model_config = ConfigDict(extra="allow")
+
+
+class PromptMessage(BaseModel):
+    """Describes a message returned as part of a prompt."""
+
+    role: Role
+    content: TextContent | ImageContent | EmbeddedResource
+    model_config = ConfigDict(extra="allow")
+
+
 class GetPromptResult(Result):
     """The server's response to a prompts/get request from the client."""
 
     description: str | None = None
     """An optional description for the prompt."""
-    messages: list[SamplingMessage]
+    messages: list[PromptMessage]
 
 
 class PromptListChangedNotification(Notification):
@@ -617,7 +640,8 @@ class CallToolRequest(Request):
 class CallToolResult(Result):
     """The server's response to a tool call."""
 
-    toolResult: Any
+    content: list[TextContent | ImageContent | EmbeddedResource]
+    isError: bool
 
 
 class ToolListChangedNotification(Notification):
@@ -630,7 +654,9 @@ class ToolListChangedNotification(Notification):
     params: NotificationParams | None = None
 
 
-LoggingLevel = Literal["debug", "info", "warning", "error"]
+LoggingLevel = Literal[
+    "debug", "info", "notice", "warning", "error", "critical", "alert", "emergency"
+]
 
 
 class SetLevelRequestParams(RequestParams):
@@ -673,10 +699,75 @@ class LoggingMessageNotification(Notification):
 IncludeContext = Literal["none", "thisServer", "allServers"]
 
 
+class ModelHint(BaseModel):
+    """Hints to use for model selection."""
+
+    name: str | None = None
+    """A hint for a model name."""
+
+    model_config = ConfigDict(extra="allow")
+
+
+class ModelPreferences(BaseModel):
+    """
+    The server's preferences for model selection, requested of the client during
+    sampling.
+
+    Because LLMs can vary along multiple dimensions, choosing the "best" model is
+    rarely straightforward.  Different models excel in different areas—some are
+    faster but less capable, others are more capable but more expensive, and so
+    on. This interface allows servers to express their priorities across multiple
+    dimensions to help clients make an appropriate selection for their use case.
+
+    These preferences are always advisory. The client MAY ignore them. It is also
+    up to the client to decide how to interpret these preferences and how to
+    balance them against other considerations.
+    """
+
+    hints: list[ModelHint] | None = None
+    """
+    Optional hints to use for model selection.
+
+    If multiple hints are specified, the client MUST evaluate them in order
+    (such that the first match is taken).
+
+    The client SHOULD prioritize these hints over the numeric priorities, but
+    MAY still use the priorities to select from ambiguous matches.
+    """
+
+    costPriority: float | None = None
+    """
+    How much to prioritize cost when selecting a model. A value of 0 means cost
+    is not important, while a value of 1 means cost is the most important
+    factor.
+    """
+
+    speedPriority: float | None = None
+    """
+    How much to prioritize sampling speed (latency) when selecting a model. A
+    value of 0 means speed is not important, while a value of 1 means speed is
+    the most important factor.
+    """
+
+    intelligencePriority: float | None = None
+    """
+    How much to prioritize intelligence and capabilities when selecting a
+    model. A value of 0 means intelligence is not important, while a value of 1
+    means intelligence is the most important factor.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+
 class CreateMessageRequestParams(RequestParams):
     """Parameters for creating a message."""
 
     messages: list[SamplingMessage]
+    modelPreferences: ModelPreferences | None = None
+    """
+    The server's preferences for which model to select. The client MAY ignore
+    these preferences.
+    """
     systemPrompt: str | None = None
     """An optional system prompt the server wants to use for sampling."""
     includeContext: IncludeContext | None = None
@@ -700,7 +791,7 @@ class CreateMessageRequest(Request):
     params: CreateMessageRequestParams
 
 
-StopReason = Literal["endTurn", "stopSequence", "maxTokens"]
+StopReason = Literal["endTurn", "stopSequence", "maxTokens"] | str
 
 
 class CreateMessageResult(Result):
@@ -710,8 +801,8 @@ class CreateMessageResult(Result):
     content: TextContent | ImageContent
     model: str
     """The name of the model that generated the message."""
-    stopReason: StopReason
-    """The reason why sampling stopped."""
+    stopReason: StopReason | None = None
+    """The reason why sampling stopped, if known."""
 
 
 class ResourceReference(BaseModel):
@@ -781,6 +872,63 @@ class CompleteResult(Result):
     completion: Completion
 
 
+class ListRootsRequest(Request):
+    """
+    Sent from the server to request a list of root URIs from the client. Roots allow
+    servers to ask for specific directories or files to operate on. A common example
+    for roots is providing a set of repositories or directories a server should operate
+    on.
+
+    This request is typically used when the server needs to understand the file system
+    structure or access specific locations that the client has permission to read from.
+    """
+
+    method: Literal["roots/list"]
+    params: RequestParams | None = None
+
+
+class Root(BaseModel):
+    """Represents a root directory or file that the server can operate on."""
+
+    uri: FileUrl
+    """
+    The URI identifying the root. This *must* start with file:// for now.
+    This restriction may be relaxed in future versions of the protocol to allow
+    other URI schemes.
+    """
+    name: str | None = None
+    """
+    An optional name for the root. This can be used to provide a human-readable
+    identifier for the root, which may be useful for display purposes or for
+    referencing the root in other parts of the application.
+    """
+    model_config = ConfigDict(extra="allow")
+
+
+class ListRootsResult(Result):
+    """
+    The client's response to a roots/list request from the server.
+    This result contains an array of Root objects, each representing a root directory
+    or file that the server can operate on.
+    """
+
+    roots: list[Root]
+
+
+class RootsListChangedNotification(Notification):
+    """
+    A notification from the client to the server, informing it that the list of
+    roots has changed.
+
+    This notification should be sent whenever the client adds, removes, or
+    modifies any root. The server should then request an updated list of roots
+    using the ListRootsRequest.
+    """
+
+    method: Literal["notifications/roots/list_changed"]
+    params: NotificationParams | None = None
+
+
 class ClientRequest(
     RootModel[
         PingRequest
@@ -801,15 +949,19 @@ class ClientRequest(
     pass
 
 
-class ClientNotification(RootModel[ProgressNotification | InitializedNotification]):
+class ClientNotification(
+    RootModel[
+        ProgressNotification | InitializedNotification | RootsListChangedNotification
+    ]
+):
     pass
 
 
-class ClientResult(RootModel[EmptyResult | CreateMessageResult]):
+class ClientResult(RootModel[EmptyResult | CreateMessageResult | ListRootsResult]):
     pass
 
 
-class ServerRequest(RootModel[PingRequest | CreateMessageRequest]):
+class ServerRequest(RootModel[PingRequest | CreateMessageRequest | ListRootsRequest]):
     pass
 
 

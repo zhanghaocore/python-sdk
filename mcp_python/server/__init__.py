@@ -18,6 +18,7 @@ from mcp_python.types import (
     ClientNotification,
     ClientRequest,
     CompleteRequest,
+    EmbeddedResource,
     EmptyResult,
     ErrorData,
     JSONRPCMessage,
@@ -31,6 +32,7 @@ from mcp_python.types import (
     PingRequest,
     ProgressNotification,
     Prompt,
+    PromptMessage,
     PromptReference,
     ReadResourceRequest,
     ReadResourceResult,
@@ -40,6 +42,7 @@ from mcp_python.types import (
     ServerResult,
     SetLevelRequest,
     SubscribeRequest,
+    TextContent,
     Tool,
     UnsubscribeRequest,
 )
@@ -117,8 +120,6 @@ class Server:
             GetPromptRequest,
             GetPromptResult,
             ImageContent,
-            SamplingMessage,
-            TextContent,
         )
         from mcp_python.types import (
             Role as Role,
@@ -133,7 +134,7 @@ class Server:
 
             async def handler(req: GetPromptRequest):
                 prompt_get = await func(req.params.name, req.params.arguments)
-                messages: list[SamplingMessage] = []
+                messages: list[PromptMessage] = []
                 for message in prompt_get.messages:
                     match message.content:
                         case str() as text_content:
@@ -144,15 +145,17 @@ class Server:
                                 data=img_content.data,
                                 mimeType=img_content.mime_type,
                             )
+                        case types.EmbeddedResource() as resource:
+                            content = EmbeddedResource(
+                                type="resource", resource=resource.resource
+                            )
                         case _:
                             raise ValueError(
                                 f"Unexpected content type: {type(message.content)}"
                             )
 
-                    sampling_message = SamplingMessage(
-                        role=message.role, content=content
-                    )
-                    messages.append(sampling_message)
+                    prompt_message = PromptMessage(role=message.role, content=content)
+                    messages.append(prompt_message)
 
                 return ServerResult(
                     GetPromptResult(description=prompt_get.desc, messages=messages)
@@ -169,9 +172,7 @@ class Server:
 
             async def handler(_: Any):
                 resources = await func()
-                return ServerResult(
-                    ListResourcesResult(resources=resources)
-                )
+                return ServerResult(ListResourcesResult(resources=resources))
 
             self.request_handlers[ListResourcesRequest] = handler
             return func
@@ -215,7 +216,6 @@ class Server:
             return func
 
         return decorator
-
 
     def set_logging_level(self):
         from mcp_python.types import EmptyResult
@@ -276,14 +276,51 @@ class Server:
         return decorator
 
     def call_tool(self):
-        from mcp_python.types import CallToolResult
+        from mcp_python.types import (
+            CallToolResult,
+            EmbeddedResource,
+            ImageContent,
+            TextContent,
+        )
 
-        def decorator(func: Callable[..., Awaitable[Any]]):
+        def decorator(
+            func: Callable[
+                ..., Awaitable[list[str | types.ImageContent | types.EmbeddedResource]]
+            ],
+        ):
             logger.debug("Registering handler for CallToolRequest")
 
             async def handler(req: CallToolRequest):
-                result = await func(req.params.name, (req.params.arguments or {}))
-                return ServerResult(CallToolResult(toolResult=result))
+                try:
+                    results = await func(req.params.name, (req.params.arguments or {}))
+                    content = []
+                    for result in results:
+                        match result:
+                            case str() as text:
+                                content.append(TextContent(type="text", text=text))
+                            case types.ImageContent() as img:
+                                content.append(
+                                    ImageContent(
+                                        type="image",
+                                        data=img.data,
+                                        mimeType=img.mime_type,
+                                    )
+                                )
+                            case types.EmbeddedResource() as resource:
+                                content.append(
+                                    EmbeddedResource(
+                                        type="resource", resource=resource.resource
+                                    )
+                                )
+
+                    return ServerResult(CallToolResult(content=content, isError=False))
+                except Exception as e:
+                    return ServerResult(
+                        CallToolResult(
+                            content=[TextContent(type="text", text=str(e))],
+                            isError=True,
+                        )
+                    )
 
             self.request_handlers[CallToolRequest] = handler
             return func

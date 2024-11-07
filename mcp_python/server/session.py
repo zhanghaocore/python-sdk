@@ -23,11 +23,16 @@ from mcp_python.types import (
     InitializeRequest,
     InitializeResult,
     JSONRPCMessage,
+    ListRootsResult,
     LoggingLevel,
+    ModelPreferences,
+    PromptListChangedNotification,
+    ResourceListChangedNotification,
     SamplingMessage,
     ServerNotification,
     ServerRequest,
     ServerResult,
+    ToolListChangedNotification,
 )
 
 
@@ -132,7 +137,7 @@ class ServerSession(
             )
         )
 
-    async def request_create_message(
+    async def create_message(
         self,
         messages: list[SamplingMessage],
         *,
@@ -142,6 +147,7 @@ class ServerSession(
         temperature: float | None = None,
         stop_sequences: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
+        model_preferences: ModelPreferences | None = None,
     ) -> CreateMessageResult:
         """Send a sampling/create_message request."""
         from mcp_python.types import (
@@ -161,10 +167,24 @@ class ServerSession(
                         maxTokens=max_tokens,
                         stopSequences=stop_sequences,
                         metadata=metadata,
+                        modelPreferences=model_preferences,
                     ),
                 )
             ),
             CreateMessageResult,
+        )
+
+    async def list_roots(self) -> ListRootsResult:
+        """Send a roots/list request."""
+        from mcp_python.types import ListRootsRequest
+
+        return await self.send_request(
+            ServerRequest(
+                ListRootsRequest(
+                    method="roots/list",
+                )
+            ),
+            ListRootsResult,
         )
 
     async def send_ping(self) -> EmptyResult:
@@ -195,6 +215,36 @@ class ServerSession(
                         progress=progress,
                         total=total,
                     ),
+                )
+            )
+        )
+
+    async def send_resource_list_changed(self) -> None:
+        """Send a resource list changed notification."""
+        await self.send_notification(
+            ServerNotification(
+                ResourceListChangedNotification(
+                    method="notifications/resources/list_changed",
+                )
+            )
+        )
+
+    async def send_tool_list_changed(self) -> None:
+        """Send a tool list changed notification."""
+        await self.send_notification(
+            ServerNotification(
+                ToolListChangedNotification(
+                    method="notifications/tools/list_changed",
+                )
+            )
+        )
+
+    async def send_prompt_list_changed(self) -> None:
+        """Send a prompt list changed notification."""
+        await self.send_notification(
+            ServerNotification(
+                PromptListChangedNotification(
+                    method="notifications/prompts/list_changed",
                 )
             )
         )
