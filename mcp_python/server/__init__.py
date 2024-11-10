@@ -2,7 +2,7 @@ import contextvars
 import logging
 import warnings
 from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import Any, Sequence
 
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from pydantic import AnyUrl
@@ -337,7 +337,7 @@ class Server:
 
         def decorator(
             func: Callable[
-                ..., Awaitable[list[str | types.ImageContent | types.EmbeddedResource]]
+                ..., Awaitable[Sequence[str | types.ImageContent | types.EmbeddedResource]]
             ],
         ):
             logger.debug("Registering handler for CallToolRequest")
