@@ -1,4 +1,4 @@
-# mcp-python
+# MCP Python SDK
 
 Python implementation of the Model Context Protocol (MCP), providing both client and server capabilities for integrating with LLM surfaces.
 
