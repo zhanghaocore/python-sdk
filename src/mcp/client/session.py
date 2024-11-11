@@ -3,9 +3,9 @@ from datetime import timedelta
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from pydantic import AnyUrl
 
-from mcp_python.shared.session import BaseSession
-from mcp_python.shared.version import SUPPORTED_PROTOCOL_VERSIONS
-from mcp_python.types import (
+from mcp.shared.session import BaseSession
+from mcp.shared.version import SUPPORTED_PROTOCOL_VERSIONS
+from mcp.types import (
     LATEST_PROTOCOL_VERSION,
     CallToolResult,
     ClientCapabilities,
@@ -56,7 +56,7 @@ class ClientSession(
         )
 
     async def initialize(self) -> InitializeResult:
-        from mcp_python.types import (
+        from mcp.types import (
             InitializeRequest,
             InitializeRequestParams,
         )
@@ -77,7 +77,7 @@ class ClientSession(
                                 listChanged=True
                             ),
                         ),
-                        clientInfo=Implementation(name="mcp_python", version="0.1.0"),
+                        clientInfo=Implementation(name="mcp", version="0.1.0"),
                     ),
                 )
             ),
@@ -100,7 +100,7 @@ class ClientSession(
 
     async def send_ping(self) -> EmptyResult:
         """Send a ping request."""
-        from mcp_python.types import PingRequest
+        from mcp.types import PingRequest
 
         return await self.send_request(
             ClientRequest(
@@ -115,7 +115,7 @@ class ClientSession(
         self, progress_token: str | int, progress: float, total: float | None = None
     ) -> None:
         """Send a progress notification."""
-        from mcp_python.types import (
+        from mcp.types import (
             ProgressNotification,
             ProgressNotificationParams,
         )
@@ -135,7 +135,7 @@ class ClientSession(
 
     async def set_logging_level(self, level: LoggingLevel) -> EmptyResult:
         """Send a logging/setLevel request."""
-        from mcp_python.types import (
+        from mcp.types import (
             SetLevelRequest,
             SetLevelRequestParams,
         )
@@ -152,7 +152,7 @@ class ClientSession(
 
     async def list_resources(self) -> ListResourcesResult:
         """Send a resources/list request."""
-        from mcp_python.types import (
+        from mcp.types import (
             ListResourcesRequest,
         )
 
@@ -167,7 +167,7 @@ class ClientSession(
 
     async def read_resource(self, uri: AnyUrl) -> ReadResourceResult:
         """Send a resources/read request."""
-        from mcp_python.types import (
+        from mcp.types import (
             ReadResourceRequest,
             ReadResourceRequestParams,
         )
@@ -184,7 +184,7 @@ class ClientSession(
 
     async def subscribe_resource(self, uri: AnyUrl) -> EmptyResult:
         """Send a resources/subscribe request."""
-        from mcp_python.types import (
+        from mcp.types import (
             SubscribeRequest,
             SubscribeRequestParams,
         )
@@ -201,7 +201,7 @@ class ClientSession(
 
     async def unsubscribe_resource(self, uri: AnyUrl) -> EmptyResult:
         """Send a resources/unsubscribe request."""
-        from mcp_python.types import (
+        from mcp.types import (
             UnsubscribeRequest,
             UnsubscribeRequestParams,
         )
@@ -220,7 +220,7 @@ class ClientSession(
         self, name: str, arguments: dict | None = None
     ) -> CallToolResult:
         """Send a tools/call request."""
-        from mcp_python.types import (
+        from mcp.types import (
             CallToolRequest,
             CallToolRequestParams,
         )
@@ -237,7 +237,7 @@ class ClientSession(
 
     async def list_prompts(self) -> ListPromptsResult:
         """Send a prompts/list request."""
-        from mcp_python.types import ListPromptsRequest
+        from mcp.types import ListPromptsRequest
 
         return await self.send_request(
             ClientRequest(
@@ -252,7 +252,7 @@ class ClientSession(
         self, name: str, arguments: dict[str, str] | None = None
     ) -> GetPromptResult:
         """Send a prompts/get request."""
-        from mcp_python.types import GetPromptRequest, GetPromptRequestParams
+        from mcp.types import GetPromptRequest, GetPromptRequestParams
 
         return await self.send_request(
             ClientRequest(
@@ -268,7 +268,7 @@ class ClientSession(
         self, ref: ResourceReference | PromptReference, argument: dict
     ) -> CompleteResult:
         """Send a completion/complete request."""
-        from mcp_python.types import (
+        from mcp.types import (
             CompleteRequest,
             CompleteRequestParams,
             CompletionArgument,
@@ -289,7 +289,7 @@ class ClientSession(
 
     async def list_tools(self) -> ListToolsResult:
         """Send a tools/list request."""
-        from mcp_python.types import ListToolsRequest
+        from mcp.types import ListToolsRequest
 
         return await self.send_request(
             ClientRequest(
@@ -302,7 +302,7 @@ class ClientSession(
 
     async def send_roots_list_changed(self) -> None:
         """Send a roots/list_changed notification."""
-        from mcp_python.types import RootsListChangedNotification
+        from mcp.types import RootsListChangedNotification
 
         await self.send_notification(
             ClientNotification(

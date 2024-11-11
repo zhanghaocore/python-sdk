@@ -7,12 +7,12 @@ from typing import Any, Sequence
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from pydantic import AnyUrl
 
-from mcp_python.server import types
-from mcp_python.server.session import ServerSession
-from mcp_python.server.stdio import stdio_server as stdio_server
-from mcp_python.shared.context import RequestContext
-from mcp_python.shared.session import RequestResponder
-from mcp_python.types import (
+from mcp.server import types
+from mcp.server.session import ServerSession
+from mcp.server.stdio import stdio_server as stdio_server
+from mcp.shared.context import RequestContext
+from mcp.shared.session import RequestResponder
+from mcp.types import (
     METHOD_NOT_FOUND,
     CallToolRequest,
     ClientNotification,
@@ -101,7 +101,7 @@ class Server:
 
         return types.InitializationOptions(
             server_name=self.name,
-            server_version=pkg_version("mcp_python"),
+            server_version=pkg_version("mcp"),
             capabilities=self.get_capabilities(
                 notification_options or NotificationOptions(),
                 experimental_capabilities or {},
@@ -168,12 +168,12 @@ class Server:
         return decorator
 
     def get_prompt(self):
-        from mcp_python.types import (
+        from mcp.types import (
             GetPromptRequest,
             GetPromptResult,
             ImageContent,
         )
-        from mcp_python.types import (
+        from mcp.types import (
             Role as Role,
         )
 
@@ -232,7 +232,7 @@ class Server:
         return decorator
 
     def read_resource(self):
-        from mcp_python.types import (
+        from mcp.types import (
             BlobResourceContents,
             TextResourceContents,
         )
@@ -270,7 +270,7 @@ class Server:
         return decorator
 
     def set_logging_level(self):
-        from mcp_python.types import EmptyResult
+        from mcp.types import EmptyResult
 
         def decorator(func: Callable[[LoggingLevel], Awaitable[None]]):
             logger.debug("Registering handler for SetLevelRequest")
@@ -285,7 +285,7 @@ class Server:
         return decorator
 
     def subscribe_resource(self):
-        from mcp_python.types import EmptyResult
+        from mcp.types import EmptyResult
 
         def decorator(func: Callable[[AnyUrl], Awaitable[None]]):
             logger.debug("Registering handler for SubscribeRequest")
@@ -300,7 +300,7 @@ class Server:
         return decorator
 
     def unsubscribe_resource(self):
-        from mcp_python.types import EmptyResult
+        from mcp.types import EmptyResult
 
         def decorator(func: Callable[[AnyUrl], Awaitable[None]]):
             logger.debug("Registering handler for UnsubscribeRequest")
@@ -328,7 +328,7 @@ class Server:
         return decorator
 
     def call_tool(self):
-        from mcp_python.types import (
+        from mcp.types import (
             CallToolResult,
             EmbeddedResource,
             ImageContent,
@@ -337,7 +337,8 @@ class Server:
 
         def decorator(
             func: Callable[
-                ..., Awaitable[Sequence[str | types.ImageContent | types.EmbeddedResource]]
+                ...,
+                Awaitable[Sequence[str | types.ImageContent | types.EmbeddedResource]],
             ],
         ):
             logger.debug("Registering handler for CallToolRequest")
@@ -397,7 +398,7 @@ class Server:
 
     def completion(self):
         """Provides completions for prompts and resource templates"""
-        from mcp_python.types import CompleteResult, Completion, CompletionArgument
+        from mcp.types import CompleteResult, Completion, CompletionArgument
 
         def decorator(
             func: Callable[

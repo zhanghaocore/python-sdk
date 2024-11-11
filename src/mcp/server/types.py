@@ -8,7 +8,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from mcp_python.types import (
+from mcp.types import (
     BlobResourceContents,
     Role,
     ServerCapabilities,

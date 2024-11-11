@@ -3,8 +3,8 @@ import io
 import anyio
 import pytest
 
-from mcp_python.server.stdio import stdio_server
-from mcp_python.types import JSONRPCMessage, JSONRPCRequest, JSONRPCResponse
+from mcp.server.stdio import stdio_server
+from mcp.types import JSONRPCMessage, JSONRPCRequest, JSONRPCResponse
 
 
 @pytest.mark.anyio

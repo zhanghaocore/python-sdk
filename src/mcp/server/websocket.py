@@ -6,7 +6,7 @@ from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStre
 from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocket
 
-from mcp_python.types import JSONRPCMessage
+from mcp.types import JSONRPCMessage
 
 logger = logging.getLogger(__name__)
 

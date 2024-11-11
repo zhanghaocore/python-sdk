@@ -1,4 +1,4 @@
-from mcp_python.types import (
+from mcp.types import (
     LATEST_PROTOCOL_VERSION,
     ClientRequest,
     JSONRPCMessage,
@@ -14,7 +14,7 @@ def test_jsonrpc_request():
         "params": {
             "protocolVersion": LATEST_PROTOCOL_VERSION,
             "capabilities": {"batch": None, "sampling": None},
-            "clientInfo": {"name": "mcp_python", "version": "0.1.0"},
+            "clientInfo": {"name": "mcp", "version": "0.1.0"},
         },
     }
 

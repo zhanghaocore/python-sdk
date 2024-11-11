@@ -1,7 +1,7 @@
 import pytest
 
-from mcp_python.client.stdio import StdioServerParameters, stdio_client
-from mcp_python.types import JSONRPCMessage, JSONRPCRequest, JSONRPCResponse
+from mcp.client.stdio import StdioServerParameters, stdio_client
+from mcp.types import JSONRPCMessage, JSONRPCRequest, JSONRPCResponse
 
 
 @pytest.mark.anyio

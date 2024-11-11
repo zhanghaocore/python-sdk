@@ -5,7 +5,7 @@ import anyio
 import anyio.lowlevel
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 
-from mcp_python.types import JSONRPCMessage
+from mcp.types import JSONRPCMessage
 
 
 @asynccontextmanager

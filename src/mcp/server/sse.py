@@ -12,7 +12,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import Receive, Scope, Send
 
-from mcp_python.types import JSONRPCMessage
+from mcp.types import JSONRPCMessage
 
 logger = logging.getLogger(__name__)
 
