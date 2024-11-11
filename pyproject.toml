@@ -8,6 +8,20 @@ version = "0.7.0.dev"
 description = "Model Context Protocol implementation for Python"
 readme = "README.md"
 requires-python = ">=3.10"
+authors = [{ name = "Anthropic, PBC." }]
+maintainers = [
+    { name = "David Soria Parra", email = "davidsp@anthropic.com" },
+    { name = "Justin Spahr-Summers", email = "justin@anthropic.com" },
+]
+keywords = ["git", "mcp", "llm", "automation"]
+license = { text = "MIT" }
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+]
 dependencies = [
     "anyio",
     "httpx",
