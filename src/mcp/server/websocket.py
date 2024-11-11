@@ -6,7 +6,7 @@ from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStre
 from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocket
 
-from mcp.types import JSONRPCMessage
+import mcp.types as types
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +21,11 @@ async def websocket_server(scope: Scope, receive: Receive, send: Send):
     websocket = WebSocket(scope, receive, send)
     await websocket.accept(subprotocol="mcp")
 
-    read_stream: MemoryObjectReceiveStream[JSONRPCMessage | Exception]
-    read_stream_writer: MemoryObjectSendStream[JSONRPCMessage | Exception]
+    read_stream: MemoryObjectReceiveStream[types.JSONRPCMessage | Exception]
+    read_stream_writer: MemoryObjectSendStream[types.JSONRPCMessage | Exception]
 
-    write_stream: MemoryObjectSendStream[JSONRPCMessage]
-    write_stream_reader: MemoryObjectReceiveStream[JSONRPCMessage]
+    write_stream: MemoryObjectSendStream[types.JSONRPCMessage]
+    write_stream_reader: MemoryObjectReceiveStream[types.JSONRPCMessage]
 
     read_stream_writer, read_stream = anyio.create_memory_object_stream(0)
     write_stream, write_stream_reader = anyio.create_memory_object_stream(0)
@@ -35,7 +35,7 @@ async def websocket_server(scope: Scope, receive: Receive, send: Send):
             async with read_stream_writer:
                 async for message in websocket.iter_json():
                     try:
-                        client_message = JSONRPCMessage.model_validate(message)
+                        client_message = types.JSONRPCMessage.model_validate(message)
                     except Exception as exc:
                         await read_stream_writer.send(exc)
                         continue

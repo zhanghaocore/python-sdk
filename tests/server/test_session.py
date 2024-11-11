@@ -3,8 +3,8 @@ import pytest
 
 from mcp.client.session import ClientSession
 from mcp.server import NotificationOptions, Server
+from mcp.server.models import InitializationOptions
 from mcp.server.session import ServerSession
-from mcp.server.types import InitializationOptions
 from mcp.types import (
     ClientNotification,
     InitializedNotification,

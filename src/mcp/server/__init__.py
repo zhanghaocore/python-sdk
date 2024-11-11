@@ -7,49 +7,12 @@ from typing import Any, Sequence
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from pydantic import AnyUrl
 
-from mcp.server import types
+import mcp.types as types
+from mcp.server.models import InitializationOptions
 from mcp.server.session import ServerSession
 from mcp.server.stdio import stdio_server as stdio_server
 from mcp.shared.context import RequestContext
 from mcp.shared.session import RequestResponder
-from mcp.types import (
-    METHOD_NOT_FOUND,
-    CallToolRequest,
-    ClientNotification,
-    ClientRequest,
-    CompleteRequest,
-    EmbeddedResource,
-    EmptyResult,
-    ErrorData,
-    JSONRPCMessage,
-    ListPromptsRequest,
-    ListPromptsResult,
-    ListResourcesRequest,
-    ListResourcesResult,
-    ListToolsRequest,
-    ListToolsResult,
-    LoggingCapability,
-    LoggingLevel,
-    PingRequest,
-    ProgressNotification,
-    Prompt,
-    PromptMessage,
-    PromptReference,
-    PromptsCapability,
-    ReadResourceRequest,
-    ReadResourceResult,
-    Resource,
-    ResourceReference,
-    ResourcesCapability,
-    ServerCapabilities,
-    ServerResult,
-    SetLevelRequest,
-    SubscribeRequest,
-    TextContent,
-    Tool,
-    ToolsCapability,
-    UnsubscribeRequest,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -73,8 +36,10 @@ class NotificationOptions:
 class Server:
     def __init__(self, name: str):
         self.name = name
-        self.request_handlers: dict[type, Callable[..., Awaitable[ServerResult]]] = {
-            PingRequest: _ping_handler,
+        self.request_handlers: dict[
+            type, Callable[..., Awaitable[types.ServerResult]]
+        ] = {
+            types.PingRequest: _ping_handler,
         }
         self.notification_handlers: dict[type, Callable[..., Awaitable[None]]] = {}
         self.notification_options = NotificationOptions()
@@ -84,7 +49,7 @@ class Server:
         self,
         notification_options: NotificationOptions | None = None,
         experimental_capabilities: dict[str, dict[str, Any]] | None = None,
-    ) -> types.InitializationOptions:
+    ) -> InitializationOptions:
         """Create initialization options from this server instance."""
 
         def pkg_version(package: str) -> str:
@@ -99,7 +64,7 @@ class Server:
 
             return "unknown"
 
-        return types.InitializationOptions(
+        return InitializationOptions(
             server_name=self.name,
             server_version=pkg_version("mcp"),
             capabilities=self.get_capabilities(
@@ -112,7 +77,7 @@ class Server:
         self,
         notification_options: NotificationOptions,
         experimental_capabilities: dict[str, dict[str, Any]],
-    ) -> ServerCapabilities:
+    ) -> types.ServerCapabilities:
         """Convert existing handlers to a ServerCapabilities object."""
         prompts_capability = None
         resources_capability = None
@@ -120,28 +85,28 @@ class Server:
         logging_capability = None
 
         # Set prompt capabilities if handler exists
-        if ListPromptsRequest in self.request_handlers:
-            prompts_capability = PromptsCapability(
+        if types.ListPromptsRequest in self.request_handlers:
+            prompts_capability = types.PromptsCapability(
                 listChanged=notification_options.prompts_changed
             )
 
         # Set resource capabilities if handler exists
-        if ListResourcesRequest in self.request_handlers:
-            resources_capability = ResourcesCapability(
+        if types.ListResourcesRequest in self.request_handlers:
+            resources_capability = types.ResourcesCapability(
                 subscribe=False, listChanged=notification_options.resources_changed
             )
 
         # Set tool capabilities if handler exists
-        if ListToolsRequest in self.request_handlers:
-            tools_capability = ToolsCapability(
+        if types.ListToolsRequest in self.request_handlers:
+            tools_capability = types.ToolsCapability(
                 listChanged=notification_options.tools_changed
             )
 
         # Set logging capabilities if handler exists
-        if SetLevelRequest in self.request_handlers:
-            logging_capability = LoggingCapability()
+        if types.SetLevelRequest in self.request_handlers:
+            logging_capability = types.LoggingCapability()
 
-        return ServerCapabilities(
+        return types.ServerCapabilities(
             prompts=prompts_capability,
             resources=resources_capability,
             tools=tools_capability,
@@ -155,96 +120,59 @@ class Server:
         return request_ctx.get()
 
     def list_prompts(self):
-        def decorator(func: Callable[[], Awaitable[list[Prompt]]]):
+        def decorator(func: Callable[[], Awaitable[list[types.Prompt]]]):
             logger.debug("Registering handler for PromptListRequest")
 
             async def handler(_: Any):
                 prompts = await func()
-                return ServerResult(ListPromptsResult(prompts=prompts))
+                return types.ServerResult(types.ListPromptsResult(prompts=prompts))
 
-            self.request_handlers[ListPromptsRequest] = handler
+            self.request_handlers[types.ListPromptsRequest] = handler
             return func
 
         return decorator
 
     def get_prompt(self):
-        from mcp.types import (
-            GetPromptRequest,
-            GetPromptResult,
-            ImageContent,
-        )
-        from mcp.types import (
-            Role as Role,
-        )
-
         def decorator(
             func: Callable[
-                [str, dict[str, str] | None], Awaitable[types.PromptResponse]
+                [str, dict[str, str] | None], Awaitable[types.GetPromptResult]
             ],
         ):
             logger.debug("Registering handler for GetPromptRequest")
 
-            async def handler(req: GetPromptRequest):
+            async def handler(req: types.GetPromptRequest):
                 prompt_get = await func(req.params.name, req.params.arguments)
-                messages: list[PromptMessage] = []
-                for message in prompt_get.messages:
-                    match message.content:
-                        case str() as text_content:
-                            content = TextContent(type="text", text=text_content)
-                        case types.ImageContent() as img_content:
-                            content = ImageContent(
-                                type="image",
-                                data=img_content.data,
-                                mimeType=img_content.mime_type,
-                            )
-                        case types.EmbeddedResource() as resource:
-                            content = EmbeddedResource(
-                                type="resource", resource=resource.resource
-                            )
-                        case _:
-                            raise ValueError(
-                                f"Unexpected content type: {type(message.content)}"
-                            )
+                return types.ServerResult(prompt_get)
 
-                    prompt_message = PromptMessage(role=message.role, content=content)
-                    messages.append(prompt_message)
-
-                return ServerResult(
-                    GetPromptResult(description=prompt_get.desc, messages=messages)
-                )
-
-            self.request_handlers[GetPromptRequest] = handler
+            self.request_handlers[types.GetPromptRequest] = handler
             return func
 
         return decorator
 
     def list_resources(self):
-        def decorator(func: Callable[[], Awaitable[list[Resource]]]):
+        def decorator(func: Callable[[], Awaitable[list[types.Resource]]]):
             logger.debug("Registering handler for ListResourcesRequest")
 
             async def handler(_: Any):
                 resources = await func()
-                return ServerResult(ListResourcesResult(resources=resources))
+                return types.ServerResult(
+                    types.ListResourcesResult(resources=resources)
+                )
 
-            self.request_handlers[ListResourcesRequest] = handler
+            self.request_handlers[types.ListResourcesRequest] = handler
             return func
 
         return decorator
 
     def read_resource(self):
-        from mcp.types import (
-            BlobResourceContents,
-            TextResourceContents,
-        )
-
         def decorator(func: Callable[[AnyUrl], Awaitable[str | bytes]]):
             logger.debug("Registering handler for ReadResourceRequest")
 
-            async def handler(req: ReadResourceRequest):
+            async def handler(req: types.ReadResourceRequest):
                 result = await func(req.params.uri)
                 match result:
                     case str(s):
-                        content = TextResourceContents(
+                        content = types.TextResourceContents(
                             uri=req.params.uri,
                             text=s,
                             mimeType="text/plain",
@@ -252,130 +180,125 @@ class Server:
                     case bytes(b):
                         import base64
 
-                        content = BlobResourceContents(
+                        content = types.BlobResourceContents(
                             uri=req.params.uri,
                             blob=base64.urlsafe_b64encode(b).decode(),
                             mimeType="application/octet-stream",
                         )
 
-                return ServerResult(
-                    ReadResourceResult(
+                return types.ServerResult(
+                    types.ReadResourceResult(
                         contents=[content],
                     )
                 )
 
-            self.request_handlers[ReadResourceRequest] = handler
+            self.request_handlers[types.ReadResourceRequest] = handler
             return func
 
         return decorator
 
     def set_logging_level(self):
-        from mcp.types import EmptyResult
-
-        def decorator(func: Callable[[LoggingLevel], Awaitable[None]]):
+        def decorator(func: Callable[[types.LoggingLevel], Awaitable[None]]):
             logger.debug("Registering handler for SetLevelRequest")
 
-            async def handler(req: SetLevelRequest):
+            async def handler(req: types.SetLevelRequest):
                 await func(req.params.level)
-                return ServerResult(EmptyResult())
+                return types.ServerResult(types.EmptyResult())
 
-            self.request_handlers[SetLevelRequest] = handler
+            self.request_handlers[types.SetLevelRequest] = handler
             return func
 
         return decorator
 
     def subscribe_resource(self):
-        from mcp.types import EmptyResult
-
         def decorator(func: Callable[[AnyUrl], Awaitable[None]]):
             logger.debug("Registering handler for SubscribeRequest")
 
-            async def handler(req: SubscribeRequest):
+            async def handler(req: types.SubscribeRequest):
                 await func(req.params.uri)
-                return ServerResult(EmptyResult())
+                return types.ServerResult(types.EmptyResult())
 
-            self.request_handlers[SubscribeRequest] = handler
+            self.request_handlers[types.SubscribeRequest] = handler
             return func
 
         return decorator
 
     def unsubscribe_resource(self):
-        from mcp.types import EmptyResult
-
         def decorator(func: Callable[[AnyUrl], Awaitable[None]]):
             logger.debug("Registering handler for UnsubscribeRequest")
 
-            async def handler(req: UnsubscribeRequest):
+            async def handler(req: types.UnsubscribeRequest):
                 await func(req.params.uri)
-                return ServerResult(EmptyResult())
+                return types.ServerResult(types.EmptyResult())
 
-            self.request_handlers[UnsubscribeRequest] = handler
+            self.request_handlers[types.UnsubscribeRequest] = handler
             return func
 
         return decorator
 
     def list_tools(self):
-        def decorator(func: Callable[[], Awaitable[list[Tool]]]):
+        def decorator(func: Callable[[], Awaitable[list[types.Tool]]]):
             logger.debug("Registering handler for ListToolsRequest")
 
             async def handler(_: Any):
                 tools = await func()
-                return ServerResult(ListToolsResult(tools=tools))
+                return types.ServerResult(types.ListToolsResult(tools=tools))
 
-            self.request_handlers[ListToolsRequest] = handler
+            self.request_handlers[types.ListToolsRequest] = handler
             return func
 
         return decorator
 
     def call_tool(self):
-        from mcp.types import (
-            CallToolResult,
-            EmbeddedResource,
-            ImageContent,
-            TextContent,
-        )
-
         def decorator(
             func: Callable[
                 ...,
-                Awaitable[Sequence[str | types.ImageContent | types.EmbeddedResource]],
+                Awaitable[
+                    Sequence[
+                        types.TextContent | types.ImageContent | types.EmbeddedResource
+                    ]
+                ],
             ],
         ):
             logger.debug("Registering handler for CallToolRequest")
 
-            async def handler(req: CallToolRequest):
+            async def handler(req: types.CallToolRequest):
                 try:
                     results = await func(req.params.name, (req.params.arguments or {}))
                     content = []
                     for result in results:
                         match result:
                             case str() as text:
-                                content.append(TextContent(type="text", text=text))
+                                content.append(
+                                    types.TextContent(type="text", text=text)
+                                )
                             case types.ImageContent() as img:
                                 content.append(
-                                    ImageContent(
+                                    types.ImageContent(
                                         type="image",
                                         data=img.data,
-                                        mimeType=img.mime_type,
+                                        mimeType=img.mimeType,
                                     )
                                 )
                             case types.EmbeddedResource() as resource:
                                 content.append(
-                                    EmbeddedResource(
+                                    types.EmbeddedResource(
                                         type="resource", resource=resource.resource
                                     )
                                 )
 
-                    return ServerResult(CallToolResult(content=content, isError=False))
+                    return types.ServerResult(
+                        types.CallToolResult(content=content, isError=False)
+                    )
                 except Exception as e:
-                    return ServerResult(
-                        CallToolResult(
-                            content=[TextContent(type="text", text=str(e))],
+                    return types.ServerResult(
+                        types.CallToolResult(
+                            content=[types.TextContent(type="text", text=str(e))],
                             isError=True,
                         )
                     )
 
-            self.request_handlers[CallToolRequest] = handler
+            self.request_handlers[types.CallToolRequest] = handler
             return func
 
         return decorator
@@ -386,48 +309,50 @@ class Server:
         ):
             logger.debug("Registering handler for ProgressNotification")
 
-            async def handler(req: ProgressNotification):
+            async def handler(req: types.ProgressNotification):
                 await func(
                     req.params.progressToken, req.params.progress, req.params.total
                 )
 
-            self.notification_handlers[ProgressNotification] = handler
+            self.notification_handlers[types.ProgressNotification] = handler
             return func
 
         return decorator
 
     def completion(self):
         """Provides completions for prompts and resource templates"""
-        from mcp.types import CompleteResult, Completion, CompletionArgument
 
         def decorator(
             func: Callable[
-                [PromptReference | ResourceReference, CompletionArgument],
-                Awaitable[Completion | None],
+                [
+                    types.PromptReference | types.ResourceReference,
+                    types.CompletionArgument,
+                ],
+                Awaitable[types.Completion | None],
             ],
         ):
             logger.debug("Registering handler for CompleteRequest")
 
-            async def handler(req: CompleteRequest):
+            async def handler(req: types.CompleteRequest):
                 completion = await func(req.params.ref, req.params.argument)
-                return ServerResult(
-                    CompleteResult(
+                return types.ServerResult(
+                    types.CompleteResult(
                         completion=completion
                         if completion is not None
-                        else Completion(values=[], total=None, hasMore=None),
+                        else types.Completion(values=[], total=None, hasMore=None),
                     )
                 )
 
-            self.request_handlers[CompleteRequest] = handler
+            self.request_handlers[types.CompleteRequest] = handler
             return func
 
         return decorator
 
     async def run(
         self,
-        read_stream: MemoryObjectReceiveStream[JSONRPCMessage | Exception],
-        write_stream: MemoryObjectSendStream[JSONRPCMessage],
-        initialization_options: types.InitializationOptions,
+        read_stream: MemoryObjectReceiveStream[types.JSONRPCMessage | Exception],
+        write_stream: MemoryObjectSendStream[types.JSONRPCMessage],
+        initialization_options: InitializationOptions,
         # When True, exceptions are returned as messages to the client.
         # When False, exceptions are raised, which will cause the server to shut down
         # but also make tracing exceptions much easier during testing and when using
@@ -442,7 +367,7 @@ class Server:
                     logger.debug(f"Received message: {message}")
 
                     match message:
-                        case RequestResponder(request=ClientRequest(root=req)):
+                        case RequestResponder(request=types.ClientRequest(root=req)):
                             logger.info(
                                 f"Processing request of type {type(req).__name__}"
                             )
@@ -467,7 +392,7 @@ class Server:
                                 except Exception as err:
                                     if raise_exceptions:
                                         raise err
-                                    response = ErrorData(
+                                    response = types.ErrorData(
                                         code=0, message=str(err), data=None
                                     )
                                 finally:
@@ -478,14 +403,14 @@ class Server:
                                 await message.respond(response)
                             else:
                                 await message.respond(
-                                    ErrorData(
-                                        code=METHOD_NOT_FOUND,
+                                    types.ErrorData(
+                                        code=types.METHOD_NOT_FOUND,
                                         message="Method not found",
                                     )
                                 )
 
                             logger.debug("Response sent")
-                        case ClientNotification(root=notify):
+                        case types.ClientNotification(root=notify):
                             if type(notify) in self.notification_handlers:
                                 assert type(notify) in self.notification_handlers
 
@@ -509,5 +434,5 @@ class Server:
                         )
 
 
-async def _ping_handler(request: PingRequest) -> ServerResult:
-    return ServerResult(EmptyResult())
+async def _ping_handler(request: types.PingRequest) -> types.ServerResult:
+    return types.ServerResult(types.EmptyResult())

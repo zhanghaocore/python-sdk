@@ -8,7 +8,7 @@ from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStre
 from anyio.streams.text import TextReceiveStream
 from pydantic import BaseModel, Field
 
-from mcp.types import JSONRPCMessage
+import mcp.types as types
 
 # Environment variables to inherit by default
 DEFAULT_INHERITED_ENV_VARS = (
@@ -72,11 +72,11 @@ async def stdio_client(server: StdioServerParameters):
     Client transport for stdio: this will connect to a server by spawning a
     process and communicating with it over stdin/stdout.
     """
-    read_stream: MemoryObjectReceiveStream[JSONRPCMessage | Exception]
-    read_stream_writer: MemoryObjectSendStream[JSONRPCMessage | Exception]
+    read_stream: MemoryObjectReceiveStream[types.JSONRPCMessage | Exception]
+    read_stream_writer: MemoryObjectSendStream[types.JSONRPCMessage | Exception]
 
-    write_stream: MemoryObjectSendStream[JSONRPCMessage]
-    write_stream_reader: MemoryObjectReceiveStream[JSONRPCMessage]
+    write_stream: MemoryObjectSendStream[types.JSONRPCMessage]
+    write_stream_reader: MemoryObjectReceiveStream[types.JSONRPCMessage]
 
     read_stream_writer, read_stream = anyio.create_memory_object_stream(0)
     write_stream, write_stream_reader = anyio.create_memory_object_stream(0)
@@ -99,7 +99,7 @@ async def stdio_client(server: StdioServerParameters):
 
                     for line in lines:
                         try:
-                            message = JSONRPCMessage.model_validate_json(line)
+                            message = types.JSONRPCMessage.model_validate_json(line)
                         except Exception as exc:
                             await read_stream_writer.send(exc)
                             continue
