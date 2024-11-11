@@ -4,9 +4,9 @@ import sys
 
 import anyio
 
+from mcp.server.models import InitializationOptions
 from mcp.server.session import ServerSession
 from mcp.server.stdio import stdio_server
-from mcp.server.models import InitializationOptions
 from mcp.types import ServerCapabilities
 
 if not sys.warnoptions:

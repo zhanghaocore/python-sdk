@@ -30,7 +30,9 @@ class SseServerTransport:
     """
 
     _endpoint: str
-    _read_stream_writers: dict[UUID, MemoryObjectSendStream[types.JSONRPCMessage | Exception]]
+    _read_stream_writers: dict[
+        UUID, MemoryObjectSendStream[types.JSONRPCMessage | Exception]
+    ]
 
     def __init__(self, endpoint: str) -> None:
         """

@@ -84,10 +84,8 @@ async def sse_client(
 
                                     case "message":
                                         try:
-                                            message = (
-                                                types.JSONRPCMessage.model_validate_json(
-                                                    sse.data
-                                                )
+                                            message = types.JSONRPCMessage.model_validate_json( # noqa: E501
+                                                sse.data
                                             )
                                             logger.debug(
                                                 f"Received server message: {message}"

@@ -3,9 +3,9 @@ from datetime import timedelta
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from pydantic import AnyUrl
 
+import mcp.types as types
 from mcp.shared.session import BaseSession
 from mcp.shared.version import SUPPORTED_PROTOCOL_VERSIONS
-import mcp.types as types
 
 
 class ClientSession(

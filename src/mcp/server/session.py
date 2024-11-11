@@ -6,12 +6,12 @@ import anyio.lowlevel
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from pydantic import AnyUrl
 
+import mcp.types as types
 from mcp.server.models import InitializationOptions
 from mcp.shared.session import (
     BaseSession,
     RequestResponder,
 )
-import mcp.types as types
 
 
 class InitializationState(Enum):
@@ -37,7 +37,9 @@ class ServerSession(
         write_stream: MemoryObjectSendStream[types.JSONRPCMessage],
         init_options: InitializationOptions,
     ) -> None:
-        super().__init__(read_stream, write_stream, types.ClientRequest, types.ClientNotification)
+        super().__init__(
+            read_stream, write_stream, types.ClientRequest, types.ClientNotification
+        )
         self._initialization_state = InitializationState.NotInitialized
         self._init_options = init_options
 
@@ -65,7 +67,9 @@ class ServerSession(
                         "Received request before initialization was complete"
                     )
 
-    async def _received_notification(self, notification: types.ClientNotification) -> None:
+    async def _received_notification(
+        self, notification: types.ClientNotification
+    ) -> None:
         # Need this to avoid ASYNC910
         await anyio.lowlevel.checkpoint()
         match notification.root:

@@ -7,12 +7,12 @@ from typing import Any, Sequence
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from pydantic import AnyUrl
 
+import mcp.types as types
 from mcp.server.models import InitializationOptions
 from mcp.server.session import ServerSession
 from mcp.server.stdio import stdio_server as stdio_server
 from mcp.shared.context import RequestContext
 from mcp.shared.session import RequestResponder
-import mcp.types as types
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,9 @@ class NotificationOptions:
 class Server:
     def __init__(self, name: str):
         self.name = name
-        self.request_handlers: dict[type, Callable[..., Awaitable[types.ServerResult]]] = {
+        self.request_handlers: dict[
+            type, Callable[..., Awaitable[types.ServerResult]]
+        ] = {
             types.PingRequest: _ping_handler,
         }
         self.notification_handlers: dict[type, Callable[..., Awaitable[None]]] = {}
@@ -153,7 +155,9 @@ class Server:
 
             async def handler(_: Any):
                 resources = await func()
-                return types.ServerResult(types.ListResourcesResult(resources=resources))
+                return types.ServerResult(
+                    types.ListResourcesResult(resources=resources)
+                )
 
             self.request_handlers[types.ListResourcesRequest] = handler
             return func
@@ -249,7 +253,11 @@ class Server:
         def decorator(
             func: Callable[
                 ...,
-                Awaitable[Sequence[types.TextContent | types.ImageContent | types.EmbeddedResource]],
+                Awaitable[
+                    Sequence[
+                        types.TextContent | types.ImageContent | types.EmbeddedResource
+                    ]
+                ],
             ],
         ):
             logger.debug("Registering handler for CallToolRequest")
@@ -261,7 +269,9 @@ class Server:
                     for result in results:
                         match result:
                             case str() as text:
-                                content.append(types.TextContent(type="text", text=text))
+                                content.append(
+                                    types.TextContent(type="text", text=text)
+                                )
                             case types.ImageContent() as img:
                                 content.append(
                                     types.ImageContent(
@@ -277,7 +287,9 @@ class Server:
                                     )
                                 )
 
-                    return types.ServerResult(types.CallToolResult(content=content, isError=False))
+                    return types.ServerResult(
+                        types.CallToolResult(content=content, isError=False)
+                    )
                 except Exception as e:
                     return types.ServerResult(
                         types.CallToolResult(
@@ -312,7 +324,10 @@ class Server:
 
         def decorator(
             func: Callable[
-                [types.PromptReference | types.ResourceReference, types.CompletionArgument],
+                [
+                    types.PromptReference | types.ResourceReference,
+                    types.CompletionArgument,
+                ],
                 Awaitable[types.Completion | None],
             ],
         ):
