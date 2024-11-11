@@ -9,7 +9,7 @@ from anyio.abc import TaskStatus
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from httpx_sse import aconnect_sse
 
-from mcp.types import JSONRPCMessage
+import mcp.types as types
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +31,11 @@ async def sse_client(
     `sse_read_timeout` determines how long (in seconds) the client will wait for a new
     event before disconnecting. All other HTTP operations are controlled by `timeout`.
     """
-    read_stream: MemoryObjectReceiveStream[JSONRPCMessage | Exception]
-    read_stream_writer: MemoryObjectSendStream[JSONRPCMessage | Exception]
+    read_stream: MemoryObjectReceiveStream[types.JSONRPCMessage | Exception]
+    read_stream_writer: MemoryObjectSendStream[types.JSONRPCMessage | Exception]
 
-    write_stream: MemoryObjectSendStream[JSONRPCMessage]
-    write_stream_reader: MemoryObjectReceiveStream[JSONRPCMessage]
+    write_stream: MemoryObjectSendStream[types.JSONRPCMessage]
+    write_stream_reader: MemoryObjectReceiveStream[types.JSONRPCMessage]
 
     read_stream_writer, read_stream = anyio.create_memory_object_stream(0)
     write_stream, write_stream_reader = anyio.create_memory_object_stream(0)
@@ -85,7 +85,7 @@ async def sse_client(
                                     case "message":
                                         try:
                                             message = (
-                                                JSONRPCMessage.model_validate_json(
+                                                types.JSONRPCMessage.model_validate_json(
                                                     sse.data
                                                 )
                                             )

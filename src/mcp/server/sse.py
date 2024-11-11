@@ -12,7 +12,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import Receive, Scope, Send
 
-from mcp.types import JSONRPCMessage
+import mcp.types as types
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class SseServerTransport:
     """
 
     _endpoint: str
-    _read_stream_writers: dict[UUID, MemoryObjectSendStream[JSONRPCMessage | Exception]]
+    _read_stream_writers: dict[UUID, MemoryObjectSendStream[types.JSONRPCMessage | Exception]]
 
     def __init__(self, endpoint: str) -> None:
         """
@@ -50,11 +50,11 @@ class SseServerTransport:
             raise ValueError("connect_sse can only handle HTTP requests")
 
         logger.debug("Setting up SSE connection")
-        read_stream: MemoryObjectReceiveStream[JSONRPCMessage | Exception]
-        read_stream_writer: MemoryObjectSendStream[JSONRPCMessage | Exception]
+        read_stream: MemoryObjectReceiveStream[types.JSONRPCMessage | Exception]
+        read_stream_writer: MemoryObjectSendStream[types.JSONRPCMessage | Exception]
 
-        write_stream: MemoryObjectSendStream[JSONRPCMessage]
-        write_stream_reader: MemoryObjectReceiveStream[JSONRPCMessage]
+        write_stream: MemoryObjectSendStream[types.JSONRPCMessage]
+        write_stream_reader: MemoryObjectReceiveStream[types.JSONRPCMessage]
 
         read_stream_writer, read_stream = anyio.create_memory_object_stream(0)
         write_stream, write_stream_reader = anyio.create_memory_object_stream(0)
@@ -125,7 +125,7 @@ class SseServerTransport:
         logger.debug(f"Received JSON: {json}")
 
         try:
-            message = JSONRPCMessage.model_validate(json)
+            message = types.JSONRPCMessage.model_validate(json)
             logger.debug(f"Validated client message: {message}")
         except ValidationError as err:
             logger.error(f"Failed to parse message: {err}")
