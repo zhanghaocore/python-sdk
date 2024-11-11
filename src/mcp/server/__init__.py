@@ -16,8 +16,8 @@ from mcp.shared.session import RequestResponder
 
 logger = logging.getLogger(__name__)
 
-request_ctx: contextvars.ContextVar[RequestContext] = contextvars.ContextVar(
-    "request_ctx"
+request_ctx: contextvars.ContextVar[RequestContext[ServerSession]] = (
+    contextvars.ContextVar("request_ctx")
 )
 
 
@@ -115,7 +115,7 @@ class Server:
         )
 
     @property
-    def request_context(self) -> RequestContext:
+    def request_context(self) -> RequestContext[ServerSession]:
         """If called outside of a request context, this will raise a LookupError."""
         return request_ctx.get()
 
