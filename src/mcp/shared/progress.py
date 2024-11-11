@@ -3,9 +3,9 @@ from dataclasses import dataclass, field
 
 from pydantic import BaseModel
 
-from mcp_python.shared.context import RequestContext
-from mcp_python.shared.session import BaseSession
-from mcp_python.types import ProgressToken
+from mcp.shared.context import RequestContext
+from mcp.shared.session import BaseSession
+from mcp.types import ProgressToken
 
 
 class Progress(BaseModel):

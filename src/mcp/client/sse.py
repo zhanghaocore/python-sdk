@@ -9,7 +9,7 @@ from anyio.abc import TaskStatus
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from httpx_sse import aconnect_sse
 
-from mcp_python.types import JSONRPCMessage
+from mcp.types import JSONRPCMessage
 
 logger = logging.getLogger(__name__)
 

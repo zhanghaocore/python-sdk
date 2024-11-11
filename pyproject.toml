@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "mcp-python"
+name = "mcp"
 version = "0.7.0.dev"
 description = "Model Context Protocol implementation for Python"
 readme = "README.md"
@@ -18,10 +18,10 @@ dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["mcp_python"]
+packages = ["src/mcp"]
 
 [tool.pyright]
-include = ["mcp_python", "tests"]
+include = ["src/mcp", "tests"]
 venvPath = "."
 venv = ".venv"
 
@@ -31,14 +31,14 @@ ignore = []
 
 [tool.ruff]
 line-length = 88
-target-version = "py38"
+target-version = "py310"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 
 [tool.uv]
 dev-dependencies = [
-    "pyright>=1.1.384",
+    "pyright>=1.1.378",
     "pytest>=8.3.3",
     "ruff>=0.6.9",
     "trio>=0.26.2",

@@ -6,12 +6,12 @@ import anyio.lowlevel
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from pydantic import AnyUrl
 
-from mcp_python.server.types import InitializationOptions
-from mcp_python.shared.session import (
+from mcp.server.types import InitializationOptions
+from mcp.shared.session import (
     BaseSession,
     RequestResponder,
 )
-from mcp_python.types import (
+from mcp.types import (
     LATEST_PROTOCOL_VERSION,
     ClientNotification,
     ClientRequest,
@@ -103,7 +103,7 @@ class ServerSession(
         self, level: LoggingLevel, data: Any, logger: str | None = None
     ) -> None:
         """Send a log message notification."""
-        from mcp_python.types import (
+        from mcp.types import (
             LoggingMessageNotification,
             LoggingMessageNotificationParams,
         )
@@ -123,7 +123,7 @@ class ServerSession(
 
     async def send_resource_updated(self, uri: AnyUrl) -> None:
         """Send a resource updated notification."""
-        from mcp_python.types import (
+        from mcp.types import (
             ResourceUpdatedNotification,
             ResourceUpdatedNotificationParams,
         )
@@ -150,7 +150,7 @@ class ServerSession(
         model_preferences: ModelPreferences | None = None,
     ) -> CreateMessageResult:
         """Send a sampling/create_message request."""
-        from mcp_python.types import (
+        from mcp.types import (
             CreateMessageRequest,
             CreateMessageRequestParams,
         )
@@ -176,7 +176,7 @@ class ServerSession(
 
     async def list_roots(self) -> ListRootsResult:
         """Send a roots/list request."""
-        from mcp_python.types import ListRootsRequest
+        from mcp.types import ListRootsRequest
 
         return await self.send_request(
             ServerRequest(
@@ -189,7 +189,7 @@ class ServerSession(
 
     async def send_ping(self) -> EmptyResult:
         """Send a ping request."""
-        from mcp_python.types import PingRequest
+        from mcp.types import PingRequest
 
         return await self.send_request(
             ServerRequest(
@@ -204,7 +204,7 @@ class ServerSession(
         self, progress_token: str | int, progress: float, total: float | None = None
     ) -> None:
         """Send a progress notification."""
-        from mcp_python.types import ProgressNotification, ProgressNotificationParams
+        from mcp.types import ProgressNotification, ProgressNotificationParams
 
         await self.send_notification(
             ServerNotification(

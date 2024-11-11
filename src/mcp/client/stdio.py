@@ -8,7 +8,7 @@ from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStre
 from anyio.streams.text import TextReceiveStream
 from pydantic import BaseModel, Field
 
-from mcp_python.types import JSONRPCMessage
+from mcp.types import JSONRPCMessage
 
 # Environment variables to inherit by default
 DEFAULT_INHERITED_ENV_VARS = (

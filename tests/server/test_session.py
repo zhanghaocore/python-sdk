@@ -1,11 +1,11 @@
 import anyio
 import pytest
 
-from mcp_python.client.session import ClientSession
-from mcp_python.server import NotificationOptions, Server
-from mcp_python.server.session import ServerSession
-from mcp_python.server.types import InitializationOptions
-from mcp_python.types import (
+from mcp.client.session import ClientSession
+from mcp.server import NotificationOptions, Server
+from mcp.server.session import ServerSession
+from mcp.server.types import InitializationOptions
+from mcp.types import (
     ClientNotification,
     InitializedNotification,
     JSONRPCMessage,
@@ -38,7 +38,7 @@ async def test_server_session_initialize():
             client_to_server_receive,
             server_to_client_send,
             InitializationOptions(
-                server_name="mcp_python",
+                server_name="mcp",
                 server_version="0.1.0",
                 capabilities=ServerCapabilities(),
             ),

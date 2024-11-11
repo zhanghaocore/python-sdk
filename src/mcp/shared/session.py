@@ -8,8 +8,8 @@ import httpx
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from pydantic import BaseModel
 
-from mcp_python.shared.exceptions import McpError
-from mcp_python.types import (
+from mcp.shared.exceptions import McpError
+from mcp.types import (
     ClientNotification,
     ClientRequest,
     ClientResult,

@@ -1,8 +1,8 @@
 import anyio
 import pytest
 
-from mcp_python.client.session import ClientSession
-from mcp_python.types import (
+from mcp.client.session import ClientSession
+from mcp.types import (
     LATEST_PROTOCOL_VERSION,
     ClientNotification,
     ClientRequest,
