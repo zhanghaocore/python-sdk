@@ -14,7 +14,7 @@ The Model Context Protocol allows applications to provide context for LLMs in a 
 ## Installation
 
 ```bash
-uv add mcp-python
+uv add mcp
 ```
 
 ## Quick Start
@@ -22,8 +22,8 @@ uv add mcp-python
 ### Creating a Client
 
 ```python
-from mcp_python import ClientSession
-from mcp_python.client.stdio import stdio_client
+from mcp import ClientSession
+from mcp.client.stdio import stdio_client
 
 async with stdio_client(command="path/to/server") as (read, write):
     async with ClientSession(read, write) as session:
@@ -37,8 +37,8 @@ async with stdio_client(command="path/to/server") as (read, write):
 ### Creating a Server
 
 ```python
-from mcp_python.server import Server
-from mcp_python.server.stdio import stdio_server
+from mcp.server import Server
+from mcp.server.stdio import stdio_server
 
 # Create a server instance
 server = Server("example-server")
