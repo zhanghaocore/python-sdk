@@ -6,7 +6,7 @@ import anyio.lowlevel
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from pydantic import AnyUrl
 
-from mcp.server.types import InitializationOptions
+from mcp.server.models import InitializationOptions
 from mcp.shared.session import (
     BaseSession,
     RequestResponder,

@@ -7,7 +7,7 @@ from typing import Any, Sequence
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from pydantic import AnyUrl
 
-from mcp.server import types
+from mcp.server.models import InitializationOptions
 from mcp.server.session import ServerSession
 from mcp.server.stdio import stdio_server as stdio_server
 from mcp.shared.context import RequestContext
@@ -15,6 +15,10 @@ from mcp.shared.session import RequestResponder
 from mcp.types import (
     METHOD_NOT_FOUND,
     CallToolRequest,
+    GetPromptResult,
+    GetPromptRequest,
+    GetPromptResult,
+    ImageContent,
     ClientNotification,
     ClientRequest,
     CompleteRequest,
@@ -84,7 +88,7 @@ class Server:
         self,
         notification_options: NotificationOptions | None = None,
         experimental_capabilities: dict[str, dict[str, Any]] | None = None,
-    ) -> types.InitializationOptions:
+    ) -> InitializationOptions:
         """Create initialization options from this server instance."""
 
         def pkg_version(package: str) -> str:
@@ -99,7 +103,7 @@ class Server:
 
             return "unknown"
 
-        return types.InitializationOptions(
+        return InitializationOptions(
             server_name=self.name,
             server_version=pkg_version("mcp"),
             capabilities=self.get_capabilities(
@@ -168,50 +172,16 @@ class Server:
         return decorator
 
     def get_prompt(self):
-        from mcp.types import (
-            GetPromptRequest,
-            GetPromptResult,
-            ImageContent,
-        )
-        from mcp.types import (
-            Role as Role,
-        )
-
         def decorator(
             func: Callable[
-                [str, dict[str, str] | None], Awaitable[types.PromptResponse]
+                [str, dict[str, str] | None], Awaitable[GetPromptResult]
             ],
         ):
             logger.debug("Registering handler for GetPromptRequest")
 
             async def handler(req: GetPromptRequest):
                 prompt_get = await func(req.params.name, req.params.arguments)
-                messages: list[PromptMessage] = []
-                for message in prompt_get.messages:
-                    match message.content:
-                        case str() as text_content:
-                            content = TextContent(type="text", text=text_content)
-                        case types.ImageContent() as img_content:
-                            content = ImageContent(
-                                type="image",
-                                data=img_content.data,
-                                mimeType=img_content.mime_type,
-                            )
-                        case types.EmbeddedResource() as resource:
-                            content = EmbeddedResource(
-                                type="resource", resource=resource.resource
-                            )
-                        case _:
-                            raise ValueError(
-                                f"Unexpected content type: {type(message.content)}"
-                            )
-
-                    prompt_message = PromptMessage(role=message.role, content=content)
-                    messages.append(prompt_message)
-
-                return ServerResult(
-                    GetPromptResult(description=prompt_get.desc, messages=messages)
-                )
+                return ServerResult(prompt_get)
 
             self.request_handlers[GetPromptRequest] = handler
             return func
@@ -338,7 +308,7 @@ class Server:
         def decorator(
             func: Callable[
                 ...,
-                Awaitable[Sequence[str | types.ImageContent | types.EmbeddedResource]],
+                Awaitable[Sequence[TextContent | ImageContent | EmbeddedResource]],
             ],
         ):
             logger.debug("Registering handler for CallToolRequest")
@@ -351,15 +321,15 @@ class Server:
                         match result:
                             case str() as text:
                                 content.append(TextContent(type="text", text=text))
-                            case types.ImageContent() as img:
+                            case ImageContent() as img:
                                 content.append(
                                     ImageContent(
                                         type="image",
                                         data=img.data,
-                                        mimeType=img.mime_type,
+                                        mimeType=img.mimeType,
                                     )
                                 )
-                            case types.EmbeddedResource() as resource:
+                            case EmbeddedResource() as resource:
                                 content.append(
                                     EmbeddedResource(
                                         type="resource", resource=resource.resource
@@ -427,7 +397,7 @@ class Server:
         self,
         read_stream: MemoryObjectReceiveStream[JSONRPCMessage | Exception],
         write_stream: MemoryObjectSendStream[JSONRPCMessage],
-        initialization_options: types.InitializationOptions,
+        initialization_options: InitializationOptions,
         # When True, exceptions are returned as messages to the client.
         # When False, exceptions are raised, which will cause the server to shut down
         # but also make tracing exceptions much easier during testing and when using
