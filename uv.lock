@@ -9,6 +9,7 @@ resolution-markers = [
 members = [
     "mcp",
     "mcp-simple-prompt",
+    "mcp-simple-resource",
     "mcp-simple-tool",
 ]
 
@@ -211,6 +212,39 @@ dev = [
 name = "mcp-simple-prompt"
 version = "0.1.0"
 source = { editable = "examples/servers/simple-prompt" }
+dependencies = [
+    { name = "anyio" },
+    { name = "click" },
+    { name = "httpx" },
+    { name = "mcp" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "anyio", specifier = ">=4.6.2.post1" },
+    { name = "click", specifier = ">=8.1.7" },
+    { name = "httpx", specifier = ">=0.27.2" },
+    { name = "mcp", editable = "." },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pyright", specifier = ">=1.1.378" },
+    { name = "pytest", specifier = ">=8.3.3" },
+    { name = "ruff", specifier = ">=0.6.9" },
+]
+
+[[package]]
+name = "mcp-simple-resource"
+version = "0.1.0"
+source = { editable = "examples/servers/simple-resource" }
 dependencies = [
     { name = "anyio" },
     { name = "click" },
