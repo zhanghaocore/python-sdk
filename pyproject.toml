@@ -23,7 +23,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
 ]
 dependencies = [
-    "anyio",
+    "anyio>=4.6",
     "httpx",
     "httpx-sse",
     "pydantic>=2.0.0",
