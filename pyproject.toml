@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp"
-version = "0.8.0"
+version = "0.8.0.dev0"
 description = "Model Context Protocol implementation for Python"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -23,7 +23,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
 ]
 dependencies = [
-    "anyio",
+    "anyio>=4.6",
     "httpx",
     "httpx-sse",
     "pydantic>=2.0.0",
