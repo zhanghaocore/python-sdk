@@ -24,11 +24,11 @@ classifiers = [
 ]
 dependencies = [
     "anyio>=4.6",
-    "httpx",
-    "httpx-sse",
-    "pydantic>=2.0.0",
-    "starlette",
-    "sse-starlette",
+    "httpx>=0.27",
+    "httpx-sse>=0.4",
+    "pydantic>=2.8.0",
+    "starlette>=0.39",
+    "sse-starlette>=2.0",
 ]
 
 [tool.hatch.build.targets.wheel]
