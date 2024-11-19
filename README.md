@@ -60,8 +60,8 @@ async with stdio_server() as (read, write):
 
 ## Documentation
 
-- [MCP Specification](https://modelcontextprotocol.github.io)
-- [Example Servers](https://github.com/modelcontextprotocol/example-servers)
+- [MCP Specification](https://modelcontextprotocol.io)
+- [Example Servers](https://github.com/modelcontextprotocol/servers)
 
 ## Contributing
 
