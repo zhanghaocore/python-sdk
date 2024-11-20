@@ -31,6 +31,12 @@ dependencies = [
     "sse-starlette>=2.0",
 ]
 
+[project.urls]
+Homepage = "https://modelcontextprotocol.io"
+Documentation = "https://modelcontextprotocol.io/api-reference/"
+Repository = "https://github.com/modelcontextprotocol/python-sdk"
+Issues = "https://github.com/modelcontextprotocol/python-sdk/issues"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcp"]
 
