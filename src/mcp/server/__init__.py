@@ -265,30 +265,8 @@ class Server:
             async def handler(req: types.CallToolRequest):
                 try:
                     results = await func(req.params.name, (req.params.arguments or {}))
-                    content = []
-                    for result in results:
-                        match result:
-                            case str() as text:
-                                content.append(
-                                    types.TextContent(type="text", text=text)
-                                )
-                            case types.ImageContent() as img:
-                                content.append(
-                                    types.ImageContent(
-                                        type="image",
-                                        data=img.data,
-                                        mimeType=img.mimeType,
-                                    )
-                                )
-                            case types.EmbeddedResource() as resource:
-                                content.append(
-                                    types.EmbeddedResource(
-                                        type="resource", resource=resource.resource
-                                    )
-                                )
-
                     return types.ServerResult(
-                        types.CallToolResult(content=content, isError=False)
+                        types.CallToolResult(content=list(results), isError=False)
                     )
                 except Exception as e:
                     return types.ServerResult(
