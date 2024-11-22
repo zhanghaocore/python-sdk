@@ -3,7 +3,6 @@ import click
 import mcp.types as types
 from mcp.server import AnyUrl, Server
 
-
 SAMPLE_RESOURCES = {
     "greeting": "Hello! This is a sample text resource.",
     "help": "This server provides a few sample text resources for testing.",
