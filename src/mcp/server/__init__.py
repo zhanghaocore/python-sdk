@@ -332,8 +332,8 @@ class Server:
         read_stream: MemoryObjectReceiveStream[types.JSONRPCMessage | Exception],
         write_stream: MemoryObjectSendStream[types.JSONRPCMessage],
         initialization_options: InitializationOptions,
-        # When True, exceptions are returned as messages to the client.
-        # When False, exceptions are raised, which will cause the server to shut down
+        # When False, exceptions are returned as messages to the client.
+        # When True, exceptions are raised, which will cause the server to shut down
         # but also make tracing exceptions much easier during testing and when using
         # in-process servers.
         raise_exceptions: bool = False,
