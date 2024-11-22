@@ -12,6 +12,7 @@ from mcp.server.models import InitializationOptions
 from mcp.server.session import ServerSession
 from mcp.server.stdio import stdio_server as stdio_server
 from mcp.shared.context import RequestContext
+from mcp.shared.exceptions import McpError
 from mcp.shared.session import RequestResponder
 
 logger = logging.getLogger(__name__)
@@ -367,6 +368,8 @@ class Server:
                                         )
                                     )
                                     response = await handler(req)
+                                except McpError as err:
+                                    response = err.error
                                 except Exception as err:
                                     if raise_exceptions:
                                         raise err
