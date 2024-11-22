@@ -31,10 +31,6 @@ def cli():
     help="Transport type",
 )
 def main(port: int, transport: str) -> int:
-    return anyio.run(_amain, port, transport)
-
-
-async def _amain(port: int, transport: str) -> int:
     app = Server("mcp-website-fetcher")
 
     @app.call_tool()
@@ -73,14 +69,16 @@ async def _amain(port: int, transport: str) -> int:
 
         sse = SseServerTransport("/messages")
 
-        async def handle_sse(scope, receive, send):
-            async with sse.connect_sse(scope, receive, send) as streams:
+        async def handle_sse(request):
+            async with sse.connect_sse(
+                request.scope, request.receive, request._send
+            ) as streams:
                 await app.run(
                     streams[0], streams[1], app.create_initialization_options()
                 )
 
-        async def handle_messages(scope, receive, send):
-            await sse.handle_post_message(scope, receive, send)
+        async def handle_messages(request):
+            await sse.handle_post_message(request.scope, request.receive, request._send)
 
         starlette_app = Starlette(
             debug=True,
@@ -96,7 +94,12 @@ async def _amain(port: int, transport: str) -> int:
     else:
         from mcp.server.stdio import stdio_server
 
-        async with stdio_server() as streams:
-            await app.run(streams[0], streams[1], app.create_initialization_options())
+        async def arun():
+            async with stdio_server() as streams:
+                await app.run(
+                    streams[0], streams[1], app.create_initialization_options()
+                )
+
+        anyio.run(arun)
 
     return 0
