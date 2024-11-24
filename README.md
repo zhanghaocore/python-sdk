@@ -1,6 +1,6 @@
 # MCP Python SDK
 
-Python implementation of the Model Context Protocol (MCP), providing both client and server capabilities for integrating with LLM surfaces.
+Python implementation of the [Model Context Protocol](https://modelcontextprotocol.io) (MCP), providing both client and server capabilities for integrating with LLM surfaces.
 
 ## Overview
 
@@ -60,7 +60,8 @@ async with stdio_server() as (read, write):
 
 ## Documentation
 
-- [MCP Specification](https://modelcontextprotocol.io)
+- [Model Context Protocol documentation](https://modelcontextprotocol.io)
+- [MCP Specification](https://spec.modelcontextprotocol.io)
 - [Example Servers](https://github.com/modelcontextprotocol/servers)
 
 ## Contributing
