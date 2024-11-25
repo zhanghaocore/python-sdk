@@ -76,6 +76,11 @@ Connections between clients and servers are established through transports like 
 MCP servers follow a decorator approach to register handlers for MCP primitives like resources, prompts, and tools. The goal is to provide a simple interface for exposing capabilities to LLM clients.
 
 ```python
+# /// script
+# dependencies = [
+#   "mcp"
+# ]
+# ///
 from mcp.server import Server, NotificationOptions
 from mcp.server.models import InitializationOptions
 import mcp.server.stdio
@@ -122,20 +127,25 @@ async def handle_get_prompt(
         ]
     )
 
-# Run the server as STDIO
-async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-    await server.run(
-        read_stream,
-        write_stream,
-        InitializationOptions(
-            server_name="example",
-            server_version="0.1.0",
-            capabilities=server.get_capabilities(
-                notification_options=NotificationOptions(),
-                experimental_capabilities={},
+async def run():
+    # Run the server as STDIO
+    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
+        await server.run(
+            read_stream,
+            write_stream,
+            InitializationOptions(
+                server_name="example",
+                server_version="0.1.0",
+                capabilities=server.get_capabilities(
+                    notification_options=NotificationOptions(),
+                    experimental_capabilities={},
+                )
             )
         )
-    )
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(run())
 ```
 
 ### Creating a Client
