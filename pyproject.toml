@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp"
-version = "1.0.0.dev0"
-description = "Model Context Protocol implementation for Python"
+version = "1.0.0"
+description = "Model Context Protocol SDK"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "Anthropic, PBC." }]
@@ -36,7 +36,6 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://modelcontextprotocol.io"
-Documentation = "https://modelcontextprotocol.io/api-reference/"
 Repository = "https://github.com/modelcontextprotocol/python-sdk"
 Issues = "https://github.com/modelcontextprotocol/python-sdk/issues"
 
