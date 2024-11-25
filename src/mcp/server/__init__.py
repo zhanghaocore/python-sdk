@@ -1,3 +1,65 @@
+"""
+MCP Server Module
+
+This module provides a framework for creating an MCP (Model Context Protocol) server.
+It allows you to easily define and handle various types of requests and notifications
+in an asynchronous manner.
+
+Usage:
+1. Create a Server instance:
+   server = Server("your_server_name")
+
+2. Define request handlers using decorators:
+   @server.list_prompts()
+   async def handle_list_prompts() -> list[types.Prompt]:
+       # Implementation
+
+   @server.get_prompt()
+   async def handle_get_prompt(
+       name: str, arguments: dict[str, str] | None
+   ) -> types.GetPromptResult:
+       # Implementation
+
+   @server.list_tools()
+   async def handle_list_tools() -> list[types.Tool]:
+       # Implementation
+
+   @server.call_tool()
+   async def handle_call_tool(
+       name: str, arguments: dict | None
+   ) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
+       # Implementation
+
+3. Define notification handlers if needed:
+   @server.progress_notification()
+   async def handle_progress(
+       progress_token: str | int, progress: float, total: float | None
+   ) -> None:
+       # Implementation
+
+4. Run the server:
+   async def main():
+       async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
+           await server.run(
+               read_stream,
+               write_stream,
+               InitializationOptions(
+                   server_name="your_server_name",
+                   server_version="your_version",
+                   capabilities=server.get_capabilities(
+                       notification_options=NotificationOptions(),
+                       experimental_capabilities={},
+                   ),
+               ),
+           )
+
+   asyncio.run(main())
+
+The Server class provides methods to register handlers for various MCP requests and
+notifications. It automatically manages the request context and handles incoming
+messages from the client.
+"""
+
 import contextvars
 import logging
 import warnings

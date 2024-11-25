@@ -1,3 +1,42 @@
+"""
+ServerSession Module
+
+This module provides the ServerSession class, which manages communication between the
+server and client in the MCP (Model Context Protocol) framework. It is most commonly
+used in MCP servers to interact with the client.
+
+Common usage pattern:
+```
+    server = Server(name)
+
+    @server.call_tool()
+    async def handle_tool_call(ctx: RequestContext, arguments: dict[str, Any]) -> Any:
+        # Check client capabilities before proceeding
+        if ctx.session.check_client_capability(
+            types.ClientCapabilities(experimental={"advanced_tools": True})
+        ):
+            # Perform advanced tool operations
+            result = await perform_advanced_tool_operation(arguments)
+        else:
+            # Fall back to basic tool operations
+            result = await perform_basic_tool_operation(arguments)
+
+        return result
+
+    @server.list_prompts()
+    async def handle_list_prompts(ctx: RequestContext) -> list[types.Prompt]:
+        # Access session for any necessary checks or operations
+        if ctx.session.client_params:
+            # Customize prompts based on client initialization parameters
+            return generate_custom_prompts(ctx.session.client_params)
+        else:
+            return default_prompts
+```
+
+The ServerSession class is typically used internally by the Server class and should not
+be instantiated directly by users of the MCP framework.
+"""
+
 from enum import Enum
 from typing import Any
 
@@ -72,8 +111,10 @@ class ServerSession(
                 return False
             # Check each experimental capability
             for exp_key, exp_value in capability.experimental.items():
-                if (exp_key not in client_caps.experimental or
-                    client_caps.experimental[exp_key] != exp_value):
+                if (
+                    exp_key not in client_caps.experimental
+                    or client_caps.experimental[exp_key] != exp_value
+                ):
                     return False
 
         return True
@@ -116,7 +157,6 @@ class ServerSession(
                     raise RuntimeError(
                         "Received notification before initialization was complete"
                     )
-
 
     async def send_log_message(
         self, level: types.LoggingLevel, data: Any, logger: str | None = None

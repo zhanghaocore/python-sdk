@@ -1,3 +1,39 @@
+"""
+SSE Server Transport Module
+
+This module implements a Server-Sent Events (SSE) transport layer for MCP servers.
+
+Example usage:
+```
+    # Create an SSE transport at an endpoint
+    sse = SseServerTransport("/messages")
+
+    # Create Starlette routes for SSE and message handling
+    routes = [
+        Route("/sse", endpoint=handle_sse),
+        Route("/messages", endpoint=handle_messages, methods=["POST"])
+    ]
+
+    # Define handler functions
+    async def handle_sse(request):
+        async with sse.connect_sse(
+            request.scope, request.receive, request._send
+        ) as streams:
+            await app.run(
+                streams[0], streams[1], app.create_initialization_options()
+            )
+
+    async def handle_messages(request):
+        await sse.handle_post_message(request.scope, request.receive, request._send)
+
+    # Create and run Starlette app
+    starlette_app = Starlette(routes=routes)
+    uvicorn.run(starlette_app, host="0.0.0.0", port=port)
+```
+
+See SseServerTransport class documentation for more details.
+"""
+
 import logging
 from contextlib import asynccontextmanager
 from typing import Any

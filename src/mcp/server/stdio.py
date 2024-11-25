@@ -1,3 +1,23 @@
+"""
+Stdio Server Transport Module
+
+This module provides functionality for creating an stdio-based transport layer
+that can be used to communicate with an MCP client through standard input/output
+streams.
+
+Example usage:
+```
+    async def run_server():
+        async with stdio_server() as (read_stream, write_stream):
+            # read_stream contains incoming JSONRPCMessages from stdin
+            # write_stream allows sending JSONRPCMessages to stdout
+            server = await create_my_server()
+            await server.run(read_stream, write_stream, init_options)
+
+    anyio.run(run_server)
+```
+"""
+
 import sys
 from contextlib import asynccontextmanager
 
