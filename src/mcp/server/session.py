@@ -13,7 +13,7 @@ Common usage pattern:
     async def handle_tool_call(ctx: RequestContext, arguments: dict[str, Any]) -> Any:
         # Check client capabilities before proceeding
         if ctx.session.check_client_capability(
-            types.ClientCapabilities(experimental={"advanced_tools": True})
+            types.ClientCapabilities(experimental={"advanced_tools": dict()})
         ):
             # Perform advanced tool operations
             result = await perform_advanced_tool_operation(arguments)
