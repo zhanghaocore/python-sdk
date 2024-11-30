@@ -75,6 +75,8 @@ Connections between clients and servers are established through transports like 
 
 MCP servers follow a decorator approach to register handlers for MCP primitives like resources, prompts, and tools. The goal is to provide a simple interface for exposing capabilities to LLM clients.
 
+**example_server.py**
+
 ```python
 # /// script
 # dependencies = [
@@ -150,39 +152,52 @@ if __name__ == "__main__":
 
 ### Creating a Client
 
+**example_client.py**
+
 ```python
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 # Create server parameters for stdio connection
 server_params = StdioServerParameters(
-    command="path/to/server",
-    args=[], # Optional command line arguments
+    command="python", # Executable
+    args=["example_server.py"], # Optional command line arguments
     env=None # Optional environment variables
 )
 
-async with stdio_client(server_params) as (read, write):
-    async with ClientSession(read, write) as session:
-        # Initialize the connection
-        await session.initialize()
+async def run():
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            # Initialize the connection
+            await session.initialize()
 
-        # List available resources
-        resources = await session.list_resources()
+            # The example server only supports prompt primitives:
+        
+            # List available prompts
+            prompts = await session.list_prompts()
 
-        # List available prompts
-        prompts = await session.list_prompts()
+            # Get a prompt
+            prompt = await session.get_prompt("example-prompt", arguments={"arg1": "value"})
 
-        # List available tools
-        tools = await session.list_tools()
+            """
+            Other example calls include:
 
-        # Read a resource
-        resource = await session.read_resource("file://some/path")
+            # List available resources
+            resources = await session.list_resources()
 
-        # Call a tool
-        result = await session.call_tool("tool-name", arguments={"arg1": "value"})
+            # List available tools
+            tools = await session.list_tools()
 
-        # Get a prompt
-        prompt = await session.get_prompt("prompt-name", arguments={"arg1": "value"})
+            # Read a resource
+            resource = await session.read_resource("file://some/path")
+
+            # Call a tool
+            result = await session.call_tool("tool-name", arguments={"arg1": "value"})
+            """
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(run())
 ```
 
 ## Primitives
