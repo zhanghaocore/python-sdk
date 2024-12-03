@@ -1,4 +1,3 @@
-# MCP Simple Tool
 
 A simple MCP server that exposes a website fetching tool.
 
@@ -8,10 +7,10 @@ Start the server using either stdio (default) or SSE transport:
 
 ```bash
 # Using stdio transport (default)
-mcp-simple-tool
+uv run mcp-simple-tool
 
 # Using SSE transport on custom port
-mcp-simple-tool --transport sse --port 8000
+uv run mcp-simple-tool --transport sse --port 8000
 ```
 
 The server exposes a tool named "fetch" that accepts one required argument:
@@ -20,21 +19,30 @@ The server exposes a tool named "fetch" that accepts one required argument:
 
 ## Example
 
-Using the MCP client, you can use the tool like this:
+Using the MCP client, you can use the tool like this using the STDIO transport:
 
 ```python
-from mcp.client import ClientSession
+import asyncio
+from mcp.client.session import ClientSession
+from mcp.client.stdio import StdioServerParameters, stdio_client
 
-async with ClientSession() as session:
-    await session.initialize()
 
-    # List available tools
-    tools = await session.list_tools()
-    print(tools)
+async def main():
+    async with stdio_client(
+        StdioServerParameters(command="uv", args=["run", "mcp-simple-tool"])
+    ) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
 
-    # Call the fetch tool
-    result = await session.call_tool("fetch", {
-        "url": "https://example.com"
-    })
-    print(result)
+            # List available tools
+            tools = await session.list_tools()
+            print(tools)
+
+            # Call the fetch tool
+            result = await session.call_tool("fetch", {"url": "https://example.com"})
+            print(result)
+
+
+asyncio.run(main())
+
 ```

@@ -10,12 +10,7 @@ SAMPLE_RESOURCES = {
 }
 
 
-@click.group()
-def cli():
-    pass
-
-
-@cli.command()
+@click.command()
 @click.option("--port", default=8000, help="Port to listen on for SSE")
 @click.option(
     "--transport",

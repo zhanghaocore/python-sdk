@@ -8,10 +8,10 @@ Start the server using either stdio (default) or SSE transport:
 
 ```bash
 # Using stdio transport (default)
-mcp-simple-prompt
+uv mcp-simple-prompt
 
 # Using SSE transport on custom port
-mcp-simple-prompt --transport sse --port 8000
+uv run mcp-simple-prompt --transport sse --port 8000
 ```
 
 The server exposes a prompt named "simple" that accepts two optional arguments:
@@ -21,22 +21,35 @@ The server exposes a prompt named "simple" that accepts two optional arguments:
 
 ## Example
 
-Using the MCP client, you can retrieve the prompt like this:
+Using the MCP client, you can retrieve the prompt like this using the STDIO transport:
 
 ```python
-from mcp.client import ClientSession
+import asyncio
+from mcp.client.session import ClientSession
+from mcp.client.stdio import StdioServerParameters, stdio_client
 
-async with ClientSession() as session:
-    await session.initialize()
 
-    # List available prompts
-    prompts = await session.list_prompts()
-    print(prompts)
+async def main():
+    async with stdio_client(
+        StdioServerParameters(command="uv", args=["run", "mcp-simple-prompt"])
+    ) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
 
-    # Get the prompt with arguments
-    prompt = await session.get_prompt("simple", {
-        "context": "User is a software developer",
-        "topic": "Python async programming"
-    })
-    print(prompt)
+            # List available prompts
+            prompts = await session.list_prompts()
+            print(prompts)
+
+            # Get the prompt with arguments
+            prompt = await session.get_prompt(
+                "simple",
+                {
+                    "context": "User is a software developer",
+                    "topic": "Python async programming",
+                },
+            )
+            print(prompt)
+
+
+asyncio.run(main())
 ```

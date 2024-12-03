@@ -17,12 +17,7 @@ async def fetch_website(
         return [types.TextContent(type="text", text=response.text)]
 
 
-@click.group()
-def cli():
-    pass
-
-
-@cli.command()
+@click.command()
 @click.option("--port", default=8000, help="Port to listen on for SSE")
 @click.option(
     "--transport",
