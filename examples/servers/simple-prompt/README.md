@@ -8,7 +8,7 @@ Start the server using either stdio (default) or SSE transport:
 
 ```bash
 # Using stdio transport (default)
-uv mcp-simple-prompt
+uv run mcp-simple-prompt
 
 # Using SSE transport on custom port
 uv run mcp-simple-prompt --transport sse --port 8000
