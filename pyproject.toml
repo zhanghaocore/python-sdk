@@ -59,6 +59,7 @@ target-version = "py310"
 "__init__.py" = ["F401"]
 
 [tool.uv]
+resolution = "lowest-direct"
 dev-dependencies = [
     "pyright>=1.1.378",
     "pytest>=8.3.3",

@@ -1,5 +1,10 @@
 # Release Process
 
+## Bumping Dependencies
+
+1. Change dependency
+2. Upgrade lock with `uv lock --resolution lowest-direct
+
 ## Major or Minor Release
 
 1. Create a release branch named `vX.Y.Z` where `X.Y.Z` is the version.
