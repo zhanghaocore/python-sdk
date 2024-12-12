@@ -1,8 +1,8 @@
+import argparse
 import logging
 import sys
 from functools import partial
 from urllib.parse import urlparse
-import argparse
 
 import anyio
 
@@ -62,19 +62,17 @@ def cli():
     parser.add_argument("command_or_url", help="Command or URL to connect to")
     parser.add_argument("args", nargs="*", help="Additional arguments")
     parser.add_argument(
-        "-e", "--env",
+        "-e",
+        "--env",
         nargs=2,
         action="append",
         metavar=("KEY", "VALUE"),
         help="Environment variables to set. Can be used multiple times.",
-        default=[]
+        default=[],
     )
 
     args = parser.parse_args()
-    anyio.run(
-        partial(main, args.command_or_url, args.args, args.env),
-        backend="trio"
-    )
+    anyio.run(partial(main, args.command_or_url, args.args, args.env), backend="trio")
 
 
 if __name__ == "__main__":
