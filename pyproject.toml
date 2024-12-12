@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp"
-version = "1.1.1.dev0"
+version = "1.1.2.dev0"
 description = "Model Context Protocol SDK"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -31,7 +31,7 @@ dependencies = [
     "httpx-sse>=0.4",
     "pydantic>=2.7.2",
     "starlette>=0.27",
-    "sse-starlette>=2.0",
+    "sse-starlette>=1.6.1",
 ]
 
 [project.urls]
