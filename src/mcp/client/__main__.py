@@ -1,10 +1,10 @@
+import argparse
 import logging
 import sys
 from functools import partial
 from urllib.parse import urlparse
 
 import anyio
-import click
 
 from mcp.client.session import ClientSession
 from mcp.client.sse import sse_client
@@ -57,19 +57,22 @@ async def main(command_or_url: str, args: list[str], env: list[tuple[str, str]])
             await run_session(*streams)
 
 
-@click.command()
-@click.argument("command_or_url")
-@click.argument("args", nargs=-1)
-@click.option(
-    "--env",
-    "-e",
-    multiple=True,
-    nargs=2,
-    metavar="KEY VALUE",
-    help="Environment variables to set. Can be used multiple times.",
-)
-def cli(*args, **kwargs):
-    anyio.run(partial(main, *args, **kwargs), backend="trio")
+def cli():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("command_or_url", help="Command or URL to connect to")
+    parser.add_argument("args", nargs="*", help="Additional arguments")
+    parser.add_argument(
+        "-e",
+        "--env",
+        nargs=2,
+        action="append",
+        metavar=("KEY", "VALUE"),
+        help="Environment variables to set. Can be used multiple times.",
+        default=[],
+    )
+
+    args = parser.parse_args()
+    anyio.run(partial(main, args.command_or_url, args.args, args.env), backend="trio")
 
 
 if __name__ == "__main__":
