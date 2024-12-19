@@ -2,7 +2,7 @@ import anyio
 import click
 import httpx
 import mcp.types as types
-from mcp.server.lowlevel import Server  # Using lowlevel API as mcp.server is deprecated
+from mcp.server.lowlevel import Server
 
 
 async def fetch_website(
