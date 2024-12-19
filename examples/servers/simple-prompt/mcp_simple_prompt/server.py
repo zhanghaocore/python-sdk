@@ -1,7 +1,7 @@
 import anyio
 import click
 import mcp.types as types
-from mcp.server import Server
+from mcp.server.lowlevel import Server  # Using lowlevel API as mcp.server is deprecated
 
 
 def create_messages(

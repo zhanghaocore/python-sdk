@@ -1,7 +1,8 @@
 import anyio
 import click
 import mcp.types as types
-from mcp.server import AnyUrl, Server
+from pydantic import AnyUrl
+from mcp.server.lowlevel import Server
 
 SAMPLE_RESOURCES = {
     "greeting": "Hello! This is a sample text resource.",
