@@ -1,10 +1,32 @@
 # MCP Python SDK
+
+<div align="center">
+
+<strong>Python implementation of the Model Context Protocol (MCP)</strong>
+
 [![PyPI][pypi-badge]][pypi-url]
 [![MIT licensed][mit-badge]][mit-url]
 [![Python Version][python-badge]][python-url]
 [![Documentation][docs-badge]][docs-url]
 [![Specification][spec-badge]][spec-url]
 [![GitHub Discussions][discussions-badge]][discussions-url]
+
+</div>
+
+<!-- omit in toc -->
+## Table of Contents
+
+- [Overview](#overview)
+- [Installation](#installation)
+- [Writing MCP Servers](#writing-mcp-servers)
+  - [FastMCP (Recommended)](#fastmcp-recommended)
+  - [Low-Level Server (Advanced)](#low-level-server-advanced)
+- [Writing MCP Clients](#writing-mcp-clients)
+- [MCP Primitives](#mcp-primitives)
+  - [Server Capabilities](#server-capabilities)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
 
 [pypi-badge]: https://img.shields.io/pypi/v/mcp.svg
 [pypi-url]: https://pypi.org/project/mcp/
@@ -19,7 +41,6 @@
 [discussions-badge]: https://img.shields.io/github/discussions/modelcontextprotocol/python-sdk
 [discussions-url]: https://github.com/modelcontextprotocol/python-sdk/discussions
 
-Python implementation of the [Model Context Protocol](https://modelcontextprotocol.io) (MCP), providing both client and server capabilities for integrating with LLM surfaces.
 
 ## Overview
 
@@ -45,35 +66,13 @@ pip install mcp
 pip install -r requirements.txt
 ```
 
-## Overview
-MCP servers provide focused functionality like resources, tools, prompts, and other capabilities that can be reused across many client applications. These servers are designed to be easy to build, highly composable, and modular.
+## Writing MCP Servers
 
-### Key design principles
-- Servers are extremely easy to build with clear, simple interfaces
-- Multiple servers can be composed seamlessly through a shared protocol
-- Each server operates in isolation and cannot access conversation context
-- Features can be added progressively through capability negotiation
+The MCP Python SDK provides two ways to implement servers:
 
-### Server provided primitives
-- [Prompts](https://modelcontextprotocol.io/docs/concepts/prompts): Templatable text
-- [Resources](https://modelcontextprotocol.io/docs/concepts/resources): File-like attachments
-- [Tools](https://modelcontextprotocol.io/docs/concepts/tools): Functions that models can call
-- Utilities:
-  - Completion: Auto-completion provider for prompt arguments or resource URI templates
-  - Logging: Logging to the client
-  - Pagination*: Pagination for long results
+### FastMCP (Recommended)
 
-### Client provided primitives
- - [Sampling](https://modelcontextprotocol.io/docs/concepts/sampling): Allow servers to sample using client models
- - Roots: Information about locations to operate on (e.g., directories)
-
-Connections between clients and servers are established through transports like **stdio** or **SSE** (Note that most clients support stdio, but not SSE at the moment). The transport layer handles message framing, delivery, and error handling.
-
-## Quick Start
-
-### FastMCP
-
-The fastest way to build MCP servers is with FastMCP, which provides a high-level, Pythonic interface:
+FastMCP provides a high-level, Pythonic interface for building MCP servers quickly and easily. It handles all the complex protocol details so you can focus on building great tools:
 
 ```python
 from mcp.server.fastmcp import FastMCP
@@ -91,13 +90,17 @@ def get_greeting(name: str) -> str:
     return f"Hello, {name}!"
 ```
 
-FastMCP handles all the complex protocol details and server management, so you can focus on building great tools. It's designed to be high-level and Pythonic - in most cases, decorating a function is all you need.
+FastMCP features:
+- Simple, decorator-based API
+- Automatic type handling and validation
+- Built-in support for async functions
+- Progress reporting and logging
+- Resource templating
+- Image handling
 
-FastMCP was originally developed by Jeremiah Lowin at [jlowin/fastmcp](https://github.com/jlowin/fastmcp). We are grateful for his contribution in developing this excellent framework that has now been integrated into MCP.
+### Low-Level Server (Advanced)
 
-### Low-Level Implementation
-
-For more control, you can use the low-level MCP implementation directly. This gives you full access to the protocol and allows you to customize every aspect of your server. We recommend using `mcp.server.lowlevel` for all low-level server implementations, as the direct `mcp.server` imports will be deprecated and removed in SDK 2.0.0.
+For more control, you can use the low-level server implementation directly. This gives you full access to the protocol and allows you to customize every aspect of your server:
 
 ```python
 from mcp.server.lowlevel import Server, NotificationOptions
@@ -108,7 +111,6 @@ import mcp.types as types
 # Create a server instance
 server = Server("example-server")
 
-# Add prompt capabilities
 @server.list_prompts()
 async def handle_list_prompts() -> list[types.Prompt]:
     return [
@@ -147,7 +149,6 @@ async def handle_get_prompt(
     )
 
 async def run():
-    # Run the server as STDIO
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
         await server.run(
             read_stream,
@@ -167,9 +168,9 @@ if __name__ == "__main__":
     asyncio.run(run())
 ```
 
-### Creating a Client
+## Writing MCP Clients
 
-**example_client.py**
+The SDK provides a high-level client interface for connecting to MCP servers:
 
 ```python
 from mcp import ClientSession, StdioServerParameters
@@ -188,16 +189,11 @@ async def run():
             # Initialize the connection
             await session.initialize()
 
-            # The example server only supports prompt primitives:
-        
             # List available prompts
             prompts = await session.list_prompts()
 
             # Get a prompt
             prompt = await session.get_prompt("example-prompt", arguments={"arg1": "value"})
-
-            """
-            Other example calls include:
 
             # List available resources
             resources = await session.list_resources()
@@ -210,16 +206,15 @@ async def run():
 
             # Call a tool
             result = await session.call_tool("tool-name", arguments={"arg1": "value"})
-            """
 
 if __name__ == "__main__":
     import asyncio
     asyncio.run(run())
 ```
 
-## Primitives
+## MCP Primitives
 
-The MCP Python SDK provides decorators that map to the core protocol primitives. Each primitive follows a different interaction pattern based on how it is controlled and used:
+The MCP protocol defines three core primitives that servers can implement:
 
 | Primitive | Control               | Description                                         | Example Use                  |
 |-----------|-----------------------|-----------------------------------------------------|------------------------------|
@@ -227,122 +222,17 @@ The MCP Python SDK provides decorators that map to the core protocol primitives.
 | Resources | Application-controlled| Contextual data managed by the client application   | File contents, API responses |
 | Tools     | Model-controlled      | Functions exposed to the LLM to take actions        | API calls, data updates      |
 
-### User-Controlled Primitives
+### Server Capabilities
 
-**Prompts** are designed to be explicitly selected by users for their interactions with LLMs.
+MCP servers declare capabilities during initialization:
 
-| Decorator                | Description                            |
-|--------------------------|----------------------------------------|
-| `@server.list_prompts()` | List available prompt templates        |
-| `@server.get_prompt()`   | Get a specific prompt with arguments   |
-
-### Application-Controlled Primitives
-
-**Resources** are controlled by the client application, which decides how and when they should be used based on its own logic.
-
-| Decorator                      | Description                           |
-|--------------------------------|---------------------------------------|
-| `@server.list_resources()`     | List available resources              |
-| `@server.read_resource()`      | Read a specific resource's content    |
-| `@server.subscribe_resource()` | Subscribe to resource updates         |
-
-### Model-Controlled Primitives
-
-**Tools** are exposed to LLMs to enable automated actions, with user approval.
-
-| Decorator              | Description                        |
-|------------------------|------------------------------------|
-| `@server.list_tools()` | List available tools               |
-| `@server.call_tool()`  | Execute a tool with arguments      |
-
-### Server Management
-
-Additional decorators for server functionality:
-
-| Decorator                     | Description                    |
-|-------------------------------|--------------------------------|
-| `@server.set_logging_level()` | Update server logging level    |
-
-### Capabilities
-
-MCP servers declare capabilities during initialization. These map to specific decorators:
-
-| Capability  | Feature Flag                 | Decorators                                                      | Description                        |
-|-------------|------------------------------|-----------------------------------------------------------------|-------------------------------------|
-| `prompts`   | `listChanged`                | `@list_prompts`<br/>`@get_prompt`                               | Prompt template management          |
-| `resources` | `subscribe`<br/>`listChanged`| `@list_resources`<br/>`@read_resource`<br/>`@subscribe_resource`| Resource exposure and updates       |
-| `tools`     | `listChanged`                | `@list_tools`<br/>`@call_tool`                                  | Tool discovery and execution        |
-| `logging`   | -                            | `@set_logging_level`                                            | Server logging configuration        |
-| `completion`| -                            | `@complete_argument`                                            | Argument completion suggestions     |
-
-Capabilities are negotiated during connection initialization. Servers only need to implement the decorators for capabilities they support.
-
-## Client Interaction
-
-The MCP Python SDK enables servers to interact with clients through request context and session management. This allows servers to perform operations like LLM sampling and progress tracking.
-
-### Request Context
-
-The Request Context provides access to the current request and client session. It can be accessed through `server.request_context` and enables:
-
-- Sampling from the client's LLM
-- Sending progress updates
-- Logging messages
-- Accessing request metadata
-
-Example using request context for LLM sampling:
-
-```python
-@server.call_tool()
-async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent]:
-    # Access the current request context
-    context = server.request_context
-
-    # Use the session to sample from the client's LLM
-    result = await context.session.create_message(
-        messages=[
-            types.SamplingMessage(
-                role="user",
-                content=types.TextContent(
-                    type="text",
-                    text="Analyze this data: " + json.dumps(arguments)
-                )
-            )
-        ],
-        max_tokens=100
-    )
-
-    return [types.TextContent(type="text", text=result.content.text)]
-```
-
-Using request context for progress updates:
-
-```python
-@server.call_tool()
-async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent]:
-    context = server.request_context
-
-    if progress_token := context.meta.progressToken:
-        # Send progress notifications
-        await context.session.send_progress_notification(
-            progress_token=progress_token,
-            progress=0.5,
-            total=1.0
-        )
-
-    # Perform operation...
-
-    if progress_token:
-        await context.session.send_progress_notification(
-            progress_token=progress_token,
-            progress=1.0,
-            total=1.0
-        )
-
-    return [types.TextContent(type="text", text="Operation complete")]
-```
-
-The request context is automatically set for each request and provides a safe way to access the current client session and request metadata.
+| Capability  | Feature Flag                 | Description                        |
+|-------------|------------------------------|------------------------------------|
+| `prompts`   | `listChanged`                | Prompt template management         |
+| `resources` | `subscribe`<br/>`listChanged`| Resource exposure and updates      |
+| `tools`     | `listChanged`                | Tool discovery and execution       |
+| `logging`   | -                            | Server logging configuration       |
+| `completion`| -                            | Argument completion suggestions    |
 
 ## Documentation
 
