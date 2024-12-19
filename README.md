@@ -34,6 +34,11 @@
 - [Examples](#examples)
   - [Echo Server](#echo-server)
   - [SQLite Explorer](#sqlite-explorer)
+- [Advanced Usage](#advanced-usage)
+  - [Low-Level Server](#low-level-server)
+  - [Writing MCP Clients](#writing-mcp-clients)
+  - [MCP Primitives](#mcp-primitives)
+  - [Server Capabilities](#server-capabilities)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 - [License](#license)
@@ -324,6 +329,144 @@ def query_data(sql: str) -> str:
     except Exception as e:
         return f"Error: {str(e)}"
 ```
+
+## Advanced Usage
+
+### Low-Level Server
+
+For more control, you can use the low-level server implementation directly. This gives you full access to the protocol and allows you to customize every aspect of your server:
+
+```python
+from mcp.server.lowlevel import Server, NotificationOptions
+from mcp.server.models import InitializationOptions
+import mcp.server.stdio
+import mcp.types as types
+
+# Create a server instance
+server = Server("example-server")
+
+@server.list_prompts()
+async def handle_list_prompts() -> list[types.Prompt]:
+    return [
+        types.Prompt(
+            name="example-prompt",
+            description="An example prompt template",
+            arguments=[
+                types.PromptArgument(
+                    name="arg1",
+                    description="Example argument",
+                    required=True
+                )
+            ]
+        )
+    ]
+
+@server.get_prompt()
+async def handle_get_prompt(
+    name: str,
+    arguments: dict[str, str] | None
+) -> types.GetPromptResult:
+    if name != "example-prompt":
+        raise ValueError(f"Unknown prompt: {name}")
+
+    return types.GetPromptResult(
+        description="Example prompt",
+        messages=[
+            types.PromptMessage(
+                role="user",
+                content=types.TextContent(
+                    type="text",
+                    text="Example prompt text"
+                )
+            )
+        ]
+    )
+
+async def run():
+    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
+        await server.run(
+            read_stream,
+            write_stream,
+            InitializationOptions(
+                server_name="example",
+                server_version="0.1.0",
+                capabilities=server.get_capabilities(
+                    notification_options=NotificationOptions(),
+                    experimental_capabilities={},
+                )
+            )
+        )
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(run())
+```
+
+### Writing MCP Clients
+
+The SDK provides a high-level client interface for connecting to MCP servers:
+
+```python
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+# Create server parameters for stdio connection
+server_params = StdioServerParameters(
+    command="python", # Executable
+    args=["example_server.py"], # Optional command line arguments
+    env=None # Optional environment variables
+)
+
+async def run():
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            # Initialize the connection
+            await session.initialize()
+
+            # List available prompts
+            prompts = await session.list_prompts()
+
+            # Get a prompt
+            prompt = await session.get_prompt("example-prompt", arguments={"arg1": "value"})
+
+            # List available resources
+            resources = await session.list_resources()
+
+            # List available tools
+            tools = await session.list_tools()
+
+            # Read a resource
+            resource = await session.read_resource("file://some/path")
+
+            # Call a tool
+            result = await session.call_tool("tool-name", arguments={"arg1": "value"})
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(run())
+```
+
+### MCP Primitives
+
+The MCP protocol defines three core primitives that servers can implement:
+
+| Primitive | Control               | Description                                         | Example Use                  |
+|-----------|-----------------------|-----------------------------------------------------|------------------------------|
+| Prompts   | User-controlled       | Interactive templates invoked by user choice        | Slash commands, menu options |
+| Resources | Application-controlled| Contextual data managed by the client application   | File contents, API responses |
+| Tools     | Model-controlled      | Functions exposed to the LLM to take actions        | API calls, data updates      |
+
+### Server Capabilities
+
+MCP servers declare capabilities during initialization:
+
+| Capability  | Feature Flag                 | Description                        |
+|-------------|------------------------------|------------------------------------|
+| `prompts`   | `listChanged`                | Prompt template management         |
+| `resources` | `subscribe`<br/>`listChanged`| Resource exposure and updates      |
+| `tools`     | `listChanged`                | Tool discovery and execution       |
+| `logging`   | -                            | Server logging configuration       |
+| `completion`| -                            | Argument completion suggestions    |
 
 ## Documentation
 
