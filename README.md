@@ -97,10 +97,10 @@ FastMCP was originally developed by Jeremiah Lowin at [jlowin/fastmcp](https://g
 
 ### Low-Level Implementation
 
-For more control, you can use the low-level MCP implementation directly. This gives you full access to the protocol and allows you to customize every aspect of your server:
+For more control, you can use the low-level MCP implementation directly. This gives you full access to the protocol and allows you to customize every aspect of your server. We recommend using `mcp.server.lowlevel` for all low-level server implementations, as the direct `mcp.server` imports will be deprecated and removed in SDK 2.0.0.
 
 ```python
-from mcp.server import Server, NotificationOptions
+from mcp.server.lowlevel import Server, NotificationOptions
 from mcp.server.models import InitializationOptions
 import mcp.server.stdio
 import mcp.types as types
