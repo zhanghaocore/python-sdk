@@ -65,7 +65,7 @@ The Model Context Protocol allows applications to provide context for LLMs in a 
 We recommend using [uv](https://docs.astral.sh/uv/) to manage your Python projects:
 
 ```bash
-uv add mcp
+uv add "mcp[cli]"
 ```
 
 Alternatively:
