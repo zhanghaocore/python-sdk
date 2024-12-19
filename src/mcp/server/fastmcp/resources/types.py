@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import anyio
+import anyio.to_thread
 import httpx
 import pydantic.json
 import pydantic_core
