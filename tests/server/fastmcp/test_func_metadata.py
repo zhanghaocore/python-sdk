@@ -85,6 +85,7 @@ def complex_arguments_fn(
     return "ok!"
 
 
+@pytest.mark.anyio
 async def test_complex_function_runtime_arg_validation_non_json():
     """Test that basic non-JSON arguments are validated correctly"""
     meta = func_metadata(complex_arguments_fn)
@@ -121,6 +122,7 @@ async def test_complex_function_runtime_arg_validation_non_json():
         )
 
 
+@pytest.mark.anyio
 async def test_complex_function_runtime_arg_validation_with_json():
     """Test that JSON string arguments are parsed and validated correctly"""
     meta = func_metadata(complex_arguments_fn)
@@ -140,7 +142,7 @@ async def test_complex_function_runtime_arg_validation_with_json():
             "unannotated": "test",
             "my_model_a": "{}",  # JSON string
             "my_model_a_forward_ref": "{}",  # JSON string
-            "my_model_b": '{"how_many_shrimp": 5, "ok": {"x": 1}, "y": null}',  # JSON string
+            "my_model_b": '{"how_many_shrimp": 5, "ok": {"x": 1}, "y": null}',
         },
         arguments_to_pass_directly=None,
     )
@@ -197,6 +199,7 @@ def test_skip_names():
     assert model.also_keep == 2.5  # type: ignore
 
 
+@pytest.mark.anyio
 async def test_lambda_function():
     """Test lambda function schema and validation"""
     fn = lambda x, y=5: x  # noqa: E731
@@ -297,7 +300,7 @@ def test_complex_function_json_schema():
             },
             "field_with_default_via_field_annotation_before_nondefault_arg": {
                 "default": 1,
-                "title": "Field With Default Via Field Annotation Before Nondefault Arg",
+                "title": "Field With Default Via Field Annotation Before Arg",
                 "type": "integer",
             },
             "unannotated": {"title": "unannotated", "type": "string"},
@@ -316,11 +319,7 @@ def test_complex_function_json_schema():
                 "type": "string",
             },
             "my_model_a_with_default": {
-                "allOf": [
-                    {
-                        "$ref": "#/$defs/SomeInputModelA"
-                    }
-                ],
+                "allOf": [{"$ref": "#/$defs/SomeInputModelA"}],
                 "default": {},
             },
             "an_int_with_default": {

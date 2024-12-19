@@ -1,9 +1,8 @@
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
+
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.server.fastmcp.tools.base import Tool
-
-from typing import Any, Callable, TYPE_CHECKING
-from collections.abc import Callable
-
 from mcp.server.fastmcp.utilities.logging import get_logger
 
 if TYPE_CHECKING:

@@ -295,7 +295,8 @@ def run(
     """Run a MCP server.
 
     The server can be specified in two ways:
-    1. Module approach: server.py - runs the module directly, expecting a server.run() call
+    1. Module approach: server.py - runs the module directly, expecting a server.run()
+       call
     2. Import approach: server.py:app - imports and runs the specified server object
 
     Note: This command runs the server directly. You are responsible for ensuring
@@ -346,7 +347,8 @@ def install(
         typer.Option(
             "--name",
             "-n",
-            help="Custom name for the server (defaults to server's name attribute or file name)",
+            help="Custom name for the server (defaults to server's name attribute or"
+            " file name)",
         ),
     ] = None,
     with_editable: Annotated[
@@ -410,7 +412,8 @@ def install(
         logger.error("Claude app not found")
         sys.exit(1)
 
-    # Try to import server to get its name, but fall back to file name if dependencies missing
+    # Try to import server to get its name, but fall back to file name if dependencies
+    # missing
     name = server_name
     server = None
     if not name:
@@ -419,7 +422,8 @@ def install(
             name = server.name
         except (ImportError, ModuleNotFoundError) as e:
             logger.debug(
-                "Could not import server (likely missing dependencies), using file name",
+                "Could not import server (likely missing dependencies), using file"
+                " name",
                 extra={"error": str(e)},
             )
             name = file.stem

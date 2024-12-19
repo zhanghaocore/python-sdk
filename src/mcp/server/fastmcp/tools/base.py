@@ -1,11 +1,11 @@
-import mcp.server.fastmcp
-from mcp.server.fastmcp.exceptions import ToolError
-from mcp.server.fastmcp.utilities.func_metadata import func_metadata, FuncMetadata
-from pydantic import BaseModel, Field
-
-
 import inspect
 from typing import TYPE_CHECKING, Any, Callable
+
+from pydantic import BaseModel, Field
+
+import mcp.server.fastmcp
+from mcp.server.fastmcp.exceptions import ToolError
+from mcp.server.fastmcp.utilities.func_metadata import FuncMetadata, func_metadata
 
 if TYPE_CHECKING:
     from mcp.server.fastmcp.server import Context
@@ -19,7 +19,8 @@ class Tool(BaseModel):
     description: str = Field(description="Description of what the tool does")
     parameters: dict = Field(description="JSON schema for tool parameters")
     fn_metadata: FuncMetadata = Field(
-        description="Metadata about the function including a pydantic model for tool arguments"
+        description="Metadata about the function including a pydantic model for tool"
+        " arguments"
     )
     is_async: bool = Field(description="Whether the tool is async")
     context_kwarg: str | None = Field(

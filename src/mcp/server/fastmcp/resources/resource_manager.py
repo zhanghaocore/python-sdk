@@ -1,7 +1,6 @@
 """Resource manager functionality."""
 
 from typing import Callable
-from collections.abc import Iterable
 
 from pydantic import AnyUrl
 

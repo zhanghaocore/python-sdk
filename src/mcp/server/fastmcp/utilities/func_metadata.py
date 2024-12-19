@@ -1,21 +1,19 @@
 import inspect
-from collections.abc import Callable, Sequence, Awaitable
+import json
+from collections.abc import Awaitable, Callable, Sequence
 from typing import (
     Annotated,
     Any,
     ForwardRef,
 )
-from pydantic import Field
-from mcp.server.fastmcp.exceptions import InvalidSignature
-from pydantic._internal._typing_extra import eval_type_backport
-import json
-from pydantic import BaseModel
-from pydantic.fields import FieldInfo
-from pydantic import ConfigDict, create_model
-from pydantic import WithJsonSchema
-from pydantic_core import PydanticUndefined
-from mcp.server.fastmcp.utilities.logging import get_logger
 
+from pydantic import BaseModel, ConfigDict, Field, WithJsonSchema, create_model
+from pydantic._internal._typing_extra import eval_type_backport
+from pydantic.fields import FieldInfo
+from pydantic_core import PydanticUndefined
+
+from mcp.server.fastmcp.exceptions import InvalidSignature
+from mcp.server.fastmcp.utilities.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -105,7 +103,8 @@ class FuncMetadata(BaseModel):
 
 
 def func_metadata(func: Callable, skip_names: Sequence[str] = ()) -> FuncMetadata:
-    """Given a function, return metadata including a pydantic model representing its signature.
+    """Given a function, return metadata including a pydantic model representing its
+    signature.
 
     The use case for this is
     ```
@@ -114,7 +113,8 @@ def func_metadata(func: Callable, skip_names: Sequence[str] = ()) -> FuncMetadat
     return func(**validated_args.model_dump_one_level())
     ```
 
-    **critically** it also provides pre-parse helper to attempt to parse things from JSON.
+    **critically** it also provides pre-parse helper to attempt to parse things from
+    JSON.
 
     Args:
         func: The function to convert to a pydantic model
@@ -130,7 +130,7 @@ def func_metadata(func: Callable, skip_names: Sequence[str] = ()) -> FuncMetadat
     for param in params.values():
         if param.name.startswith("_"):
             raise InvalidSignature(
-                f"Parameter {param.name} of {func.__name__} may not start with an underscore"
+                f"Parameter {param.name} of {func.__name__} cannot start with '_'"
             )
         if param.name in skip_names:
             continue

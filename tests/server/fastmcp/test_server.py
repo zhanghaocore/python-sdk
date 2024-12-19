@@ -3,32 +3,34 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Union
 
 import pytest
-from mcp.shared.exceptions import McpError
-from mcp.shared.memory import (
-    create_connected_server_and_client_session as client_session,
-)
-from mcp.types import (
-    ImageContent,
-    TextContent,
-    TextResourceContents,
-    BlobResourceContents,
-)
 from pydantic import AnyUrl
 
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.fastmcp.prompts.base import EmbeddedResource, Message, UserMessage
 from mcp.server.fastmcp.resources import FileResource, FunctionResource
 from mcp.server.fastmcp.utilities.types import Image
+from mcp.shared.exceptions import McpError
+from mcp.shared.memory import (
+    create_connected_server_and_client_session as client_session,
+)
+from mcp.types import (
+    BlobResourceContents,
+    ImageContent,
+    TextContent,
+    TextResourceContents,
+)
 
 if TYPE_CHECKING:
     from mcp.server.fastmcp import Context
 
 
 class TestServer:
+    @pytest.mark.anyio
     async def test_create_server(self):
         mcp = FastMCP()
         assert mcp.name == "FastMCP"
 
+    @pytest.mark.anyio
     async def test_add_tool_decorator(self):
         mcp = FastMCP()
 
@@ -38,6 +40,7 @@ class TestServer:
 
         assert len(mcp._tool_manager.list_tools()) == 1
 
+    @pytest.mark.anyio
     async def test_add_tool_decorator_incorrect_usage(self):
         mcp = FastMCP()
 
@@ -47,6 +50,7 @@ class TestServer:
             def add(x: int, y: int) -> int:
                 return x + y
 
+    @pytest.mark.anyio
     async def test_add_resource_decorator(self):
         mcp = FastMCP()
 
@@ -56,6 +60,7 @@ class TestServer:
 
         assert len(mcp._resource_manager._templates) == 1
 
+    @pytest.mark.anyio
     async def test_add_resource_decorator_incorrect_usage(self):
         mcp = FastMCP()
 
@@ -88,12 +93,14 @@ def mixed_content_tool_fn() -> list[Union[TextContent, ImageContent]]:
 
 
 class TestServerTools:
+    @pytest.mark.anyio
     async def test_add_tool(self):
         mcp = FastMCP()
         mcp.add_tool(tool_fn)
         mcp.add_tool(tool_fn)
         assert len(mcp._tool_manager.list_tools()) == 1
 
+    @pytest.mark.anyio
     async def test_list_tools(self):
         mcp = FastMCP()
         mcp.add_tool(tool_fn)
@@ -101,6 +108,7 @@ class TestServerTools:
             tools = await client.list_tools()
             assert len(tools.tools) == 1
 
+    @pytest.mark.anyio
     async def test_call_tool(self):
         mcp = FastMCP()
         mcp.add_tool(tool_fn)
@@ -109,6 +117,7 @@ class TestServerTools:
             assert not hasattr(result, "error")
             assert len(result.content) > 0
 
+    @pytest.mark.anyio
     async def test_tool_exception_handling(self):
         mcp = FastMCP()
         mcp.add_tool(error_tool_fn)
@@ -120,6 +129,7 @@ class TestServerTools:
             assert "Test error" in content.text
             assert result.isError is True
 
+    @pytest.mark.anyio
     async def test_tool_error_handling(self):
         mcp = FastMCP()
         mcp.add_tool(error_tool_fn)
@@ -131,6 +141,7 @@ class TestServerTools:
             assert "Test error" in content.text
             assert result.isError is True
 
+    @pytest.mark.anyio
     async def test_tool_error_details(self):
         """Test that exception details are properly formatted in the response"""
         mcp = FastMCP()
@@ -143,6 +154,7 @@ class TestServerTools:
             assert "Test error" in content.text
             assert result.isError is True
 
+    @pytest.mark.anyio
     async def test_tool_return_value_conversion(self):
         mcp = FastMCP()
         mcp.add_tool(tool_fn)
@@ -153,6 +165,7 @@ class TestServerTools:
             assert isinstance(content, TextContent)
             assert content.text == "3"
 
+    @pytest.mark.anyio
     async def test_tool_image_helper(self, tmp_path: Path):
         # Create a test image
         image_path = tmp_path / "test.png"
@@ -171,6 +184,7 @@ class TestServerTools:
             decoded = base64.b64decode(content.data)
             assert decoded == b"fake png data"
 
+    @pytest.mark.anyio
     async def test_tool_mixed_content(self):
         mcp = FastMCP()
         mcp.add_tool(mixed_content_tool_fn)
@@ -185,8 +199,10 @@ class TestServerTools:
             assert content2.mimeType == "image/png"
             assert content2.data == "abc"
 
+    @pytest.mark.anyio
     async def test_tool_mixed_list_with_image(self, tmp_path: Path):
-        """Test that lists containing Image objects and other types are handled correctly"""
+        """Test that lists containing Image objects and other types are handled
+        correctly"""
         # Create a test image
         image_path = tmp_path / "test.png"
         image_path.write_bytes(b"test image data")
@@ -224,6 +240,7 @@ class TestServerTools:
 
 
 class TestServerResources:
+    @pytest.mark.anyio
     async def test_text_resource(self):
         mcp = FastMCP()
 
@@ -240,6 +257,7 @@ class TestServerResources:
             assert isinstance(result.contents[0], TextResourceContents)
             assert result.contents[0].text == "Hello, world!"
 
+    @pytest.mark.anyio
     async def test_binary_resource(self):
         mcp = FastMCP()
 
@@ -259,6 +277,7 @@ class TestServerResources:
             assert isinstance(result.contents[0], BlobResourceContents)
             assert result.contents[0].blob == base64.b64encode(b"Binary data").decode()
 
+    @pytest.mark.anyio
     async def test_file_resource_text(self, tmp_path: Path):
         mcp = FastMCP()
 
@@ -276,6 +295,7 @@ class TestServerResources:
             assert isinstance(result.contents[0], TextResourceContents)
             assert result.contents[0].text == "Hello from file!"
 
+    @pytest.mark.anyio
     async def test_file_resource_binary(self, tmp_path: Path):
         mcp = FastMCP()
 
@@ -301,6 +321,7 @@ class TestServerResources:
 
 
 class TestServerResourceTemplates:
+    @pytest.mark.anyio
     async def test_resource_with_params(self):
         """Test that a resource with function parameters raises an error if the URI
         parameters don't match"""
@@ -312,6 +333,7 @@ class TestServerResourceTemplates:
             def get_data_fn(param: str) -> str:
                 return f"Data: {param}"
 
+    @pytest.mark.anyio
     async def test_resource_with_uri_params(self):
         """Test that a resource with URI parameters is automatically a template"""
         mcp = FastMCP()
@@ -322,6 +344,7 @@ class TestServerResourceTemplates:
             def get_data() -> str:
                 return "Data"
 
+    @pytest.mark.anyio
     async def test_resource_with_untyped_params(self):
         """Test that a resource with untyped parameters raises an error"""
         mcp = FastMCP()
@@ -330,6 +353,7 @@ class TestServerResourceTemplates:
         def get_data(param) -> str:
             return "Data"
 
+    @pytest.mark.anyio
     async def test_resource_matching_params(self):
         """Test that a resource with matching URI and function parameters works"""
         mcp = FastMCP()
@@ -343,6 +367,7 @@ class TestServerResourceTemplates:
             assert isinstance(result.contents[0], TextResourceContents)
             assert result.contents[0].text == "Data for test"
 
+    @pytest.mark.anyio
     async def test_resource_mismatched_params(self):
         """Test that mismatched parameters raise an error"""
         mcp = FastMCP()
@@ -353,6 +378,7 @@ class TestServerResourceTemplates:
             def get_data(user: str) -> str:
                 return f"Data for {user}"
 
+    @pytest.mark.anyio
     async def test_resource_multiple_params(self):
         """Test that multiple parameters work correctly"""
         mcp = FastMCP()
@@ -368,6 +394,7 @@ class TestServerResourceTemplates:
             assert isinstance(result.contents[0], TextResourceContents)
             assert result.contents[0].text == "Data for cursor/fastmcp"
 
+    @pytest.mark.anyio
     async def test_resource_multiple_mismatched_params(self):
         """Test that mismatched parameters raise an error"""
         mcp = FastMCP()
@@ -390,6 +417,7 @@ class TestServerResourceTemplates:
             assert isinstance(result.contents[0], TextResourceContents)
             assert result.contents[0].text == "Static data"
 
+    @pytest.mark.anyio
     async def test_template_to_resource_conversion(self):
         """Test that templates are properly converted to resources when accessed"""
         mcp = FastMCP()
@@ -412,6 +440,7 @@ class TestServerResourceTemplates:
 class TestContextInjection:
     """Test context injection in tools."""
 
+    @pytest.mark.anyio
     async def test_context_detection(self):
         """Test that context parameters are properly detected."""
         mcp = FastMCP()
@@ -422,6 +451,7 @@ class TestContextInjection:
         tool = mcp._tool_manager.add_tool(tool_with_context)
         assert tool.context_kwarg == "ctx"
 
+    @pytest.mark.anyio
     async def test_context_injection(self):
         """Test that context is properly injected into tool calls."""
         mcp = FastMCP()
@@ -439,6 +469,7 @@ class TestContextInjection:
             assert "Request" in content.text
             assert "42" in content.text
 
+    @pytest.mark.anyio
     async def test_async_context(self):
         """Test that context works in async functions."""
         mcp = FastMCP()
@@ -456,6 +487,7 @@ class TestContextInjection:
             assert "Async request" in content.text
             assert "42" in content.text
 
+    @pytest.mark.anyio
     async def test_context_logging(self):
         """Test that context logging methods work."""
         mcp = FastMCP()
@@ -475,6 +507,7 @@ class TestContextInjection:
             assert isinstance(content, TextContent)
             assert "Logged messages for test" in content.text
 
+    @pytest.mark.anyio
     async def test_optional_context(self):
         """Test that context is optional."""
         mcp = FastMCP()
@@ -490,6 +523,7 @@ class TestContextInjection:
             assert isinstance(content, TextContent)
             assert content.text == "42"
 
+    @pytest.mark.anyio
     async def test_context_resource_access(self):
         """Test that context can access resources."""
         mcp = FastMCP()
@@ -514,6 +548,7 @@ class TestContextInjection:
 class TestServerPrompts:
     """Test prompt functionality in FastMCP server."""
 
+    @pytest.mark.anyio
     async def test_prompt_decorator(self):
         """Test that the prompt decorator registers prompts correctly."""
         mcp = FastMCP()
@@ -530,6 +565,7 @@ class TestServerPrompts:
         assert isinstance(content[0].content, TextContent)
         assert content[0].content.text == "Hello, world!"
 
+    @pytest.mark.anyio
     async def test_prompt_decorator_with_name(self):
         """Test prompt decorator with custom name."""
         mcp = FastMCP()
@@ -545,6 +581,7 @@ class TestServerPrompts:
         assert isinstance(content[0].content, TextContent)
         assert content[0].content.text == "Hello, world!"
 
+    @pytest.mark.anyio
     async def test_prompt_decorator_with_description(self):
         """Test prompt decorator with custom description."""
         mcp = FastMCP()
@@ -569,6 +606,7 @@ class TestServerPrompts:
             def fn() -> str:
                 return "Hello, world!"
 
+    @pytest.mark.anyio
     async def test_list_prompts(self):
         """Test listing prompts through MCP protocol."""
         mcp = FastMCP()
@@ -590,6 +628,7 @@ class TestServerPrompts:
             assert prompt.arguments[1].name == "optional"
             assert prompt.arguments[1].required is False
 
+    @pytest.mark.anyio
     async def test_get_prompt(self):
         """Test getting a prompt through MCP protocol."""
         mcp = FastMCP()
@@ -607,6 +646,7 @@ class TestServerPrompts:
             assert isinstance(content, TextContent)
             assert content.text == "Hello, World!"
 
+    @pytest.mark.anyio
     async def test_get_prompt_with_resource(self):
         """Test getting a prompt that returns resource content."""
         mcp = FastMCP()
@@ -636,6 +676,7 @@ class TestServerPrompts:
             assert resource.text == "File contents"
             assert resource.mimeType == "text/plain"
 
+    @pytest.mark.anyio
     async def test_get_unknown_prompt(self):
         """Test error when getting unknown prompt."""
         mcp = FastMCP()
@@ -643,6 +684,7 @@ class TestServerPrompts:
             with pytest.raises(McpError, match="Unknown prompt"):
                 await client.get_prompt("unknown")
 
+    @pytest.mark.anyio
     async def test_get_prompt_missing_args(self):
         """Test error when required arguments are missing."""
         mcp = FastMCP()

@@ -6,7 +6,8 @@
 
 """
 Recursive memory system inspired by the human brain's clustering of memories.
-Uses OpenAI's 'text-embedding-3-small' model and pgvector for efficient similarity search.
+Uses OpenAI's 'text-embedding-3-small' model and pgvector for efficient
+similarity search.
 """
 
 import asyncio
@@ -111,7 +112,8 @@ class MemoryNode(BaseModel):
             if self.id is None:
                 result = await conn.fetchrow(
                     """
-                    INSERT INTO memories (content, summary, importance, access_count, timestamp, embedding)
+                    INSERT INTO memories (content, summary, importance, access_count,
+                        timestamp, embedding)
                     VALUES ($1, $2, $3, $4, $5, $6)
                     RETURNING id
                     """,
@@ -336,7 +338,8 @@ async def initialize_database():
                     timestamp DOUBLE PRECISION NOT NULL,
                     embedding vector(1536) NOT NULL
                 );
-                CREATE INDEX IF NOT EXISTS idx_memories_embedding ON memories USING hnsw (embedding vector_l2_ops);
+                CREATE INDEX IF NOT EXISTS idx_memories_embedding ON memories
+                    USING hnsw (embedding vector_l2_ops);
             """)
     finally:
         await pool.close()

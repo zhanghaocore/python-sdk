@@ -1,17 +1,25 @@
 """FastMCP - A more ergonomic interface for MCP servers."""
 
-import anyio
 import functools
 import inspect
 import json
 import re
 from itertools import chain
 from typing import Any, Callable, Literal, Sequence
-from collections.abc import Iterable
 
+import anyio
 import pydantic_core
-from pydantic import Field
 import uvicorn
+from pydantic import BaseModel, Field
+from pydantic.networks import AnyUrl
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from mcp.server.fastmcp.exceptions import ResourceError
+from mcp.server.fastmcp.prompts import Prompt, PromptManager
+from mcp.server.fastmcp.resources import FunctionResource, Resource, ResourceManager
+from mcp.server.fastmcp.tools import ToolManager
+from mcp.server.fastmcp.utilities.logging import configure_logging, get_logger
+from mcp.server.fastmcp.utilities.types import Image
 from mcp.server.lowlevel import Server as MCPServer
 from mcp.server.sse import SseServerTransport
 from mcp.server.stdio import stdio_server
@@ -24,6 +32,8 @@ from mcp.types import (
 )
 from mcp.types import (
     Prompt as MCPPrompt,
+)
+from mcp.types import (
     PromptArgument as MCPPromptArgument,
 )
 from mcp.types import (
@@ -35,16 +45,6 @@ from mcp.types import (
 from mcp.types import (
     Tool as MCPTool,
 )
-from pydantic import BaseModel
-from pydantic.networks import AnyUrl
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
-from mcp.server.fastmcp.exceptions import ResourceError
-from mcp.server.fastmcp.prompts import Prompt, PromptManager
-from mcp.server.fastmcp.resources import FunctionResource, Resource, ResourceManager
-from mcp.server.fastmcp.tools import ToolManager
-from mcp.server.fastmcp.utilities.logging import configure_logging, get_logger
-from mcp.server.fastmcp.utilities.types import Image
 
 logger = get_logger(__name__)
 
@@ -226,8 +226,9 @@ class FastMCP:
     def tool(self, name: str | None = None, description: str | None = None) -> Callable:
         """Decorator to register a tool.
 
-        Tools can optionally request a Context object by adding a parameter with the Context type annotation.
-        The context provides access to MCP capabilities like logging, progress reporting, and resource access.
+        Tools can optionally request a Context object by adding a parameter with the
+        Context type annotation. The context provides access to MCP capabilities like
+        logging, progress reporting, and resource access.
 
         Args:
             name: Optional name for the tool (defaults to function name)

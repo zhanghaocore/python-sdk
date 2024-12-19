@@ -1,5 +1,6 @@
 import pytest
-from mcp.server.fastmcp.prompts.base import UserMessage, TextContent, Prompt
+
+from mcp.server.fastmcp.prompts.base import Prompt, TextContent, UserMessage
 from mcp.server.fastmcp.prompts.manager import PromptManager
 
 
@@ -60,6 +61,7 @@ class TestPromptManager:
         assert len(prompts) == 2
         assert prompts == [prompt1, prompt2]
 
+    @pytest.mark.anyio
     async def test_render_prompt(self):
         """Test rendering a prompt."""
 
@@ -74,6 +76,7 @@ class TestPromptManager:
             UserMessage(content=TextContent(type="text", text="Hello, world!"))
         ]
 
+    @pytest.mark.anyio
     async def test_render_prompt_with_args(self):
         """Test rendering a prompt with arguments."""
 
@@ -88,12 +91,14 @@ class TestPromptManager:
             UserMessage(content=TextContent(type="text", text="Hello, World!"))
         ]
 
+    @pytest.mark.anyio
     async def test_render_unknown_prompt(self):
         """Test rendering a non-existent prompt."""
         manager = PromptManager()
         with pytest.raises(ValueError, match="Unknown prompt: unknown"):
             await manager.render_prompt("unknown")
 
+    @pytest.mark.anyio
     async def test_render_prompt_with_missing_args(self):
         """Test rendering a prompt with missing required arguments."""
 

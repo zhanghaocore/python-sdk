@@ -1,6 +1,7 @@
-import pytest
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+
+import pytest
 from pydantic import AnyUrl, FileUrl
 
 from mcp.server.fastmcp.resources import (
@@ -80,6 +81,7 @@ class TestResourceManager:
         manager.add_resource(resource)
         assert "Resource already exists" not in caplog.text
 
+    @pytest.mark.anyio
     async def test_get_resource(self, temp_file: Path):
         """Test getting a resource by URI."""
         manager = ResourceManager()
@@ -92,6 +94,7 @@ class TestResourceManager:
         retrieved = await manager.get_resource(resource.uri)
         assert retrieved == resource
 
+    @pytest.mark.anyio
     async def test_get_resource_from_template(self):
         """Test getting a resource through a template."""
         manager = ResourceManager()
@@ -111,6 +114,7 @@ class TestResourceManager:
         content = await resource.read()
         assert content == "Hello, world!"
 
+    @pytest.mark.anyio
     async def test_get_unknown_resource(self):
         """Test getting a non-existent resource."""
         manager = ResourceManager()

@@ -48,8 +48,8 @@ def update_claude_config(
     config_dir = get_claude_config_path()
     if not config_dir:
         raise RuntimeError(
-            "Claude Desktop config directory not found. Please ensure Claude Desktop "
-            "is installed and has been run at least once to initialize its configuration."
+            "Claude Desktop config directory not found. Please ensure Claude Desktop"
+            " is installed and has been run at least once to initialize its config."
         )
 
     config_file = config_dir / "claude_desktop_config.json"

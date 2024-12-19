@@ -1,13 +1,14 @@
 """Base classes for FastMCP prompts."""
 
-import json
-from typing import Any, Literal, Sequence, Awaitable
 import inspect
+import json
 from collections.abc import Callable
+from typing import Any, Awaitable, Literal, Sequence
 
-from pydantic import BaseModel, Field, TypeAdapter, validate_call
-from mcp.types import TextContent, ImageContent, EmbeddedResource
 import pydantic_core
+from pydantic import BaseModel, Field, TypeAdapter, validate_call
+
+from mcp.types import EmbeddedResource, ImageContent, TextContent
 
 CONTENT_TYPES = TextContent | ImageContent | EmbeddedResource
 

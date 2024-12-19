@@ -47,7 +47,6 @@ dev-dependencies = [
     "trio>=0.26.2",
     "pytest-flakefinder>=1.1.0",
     "pytest-xdist>=3.6.1",
-    "pytest-asyncio>=0.24.0",
 ]
 
 [build-system]
