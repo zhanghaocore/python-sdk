@@ -1,7 +1,7 @@
 import pytest
 from pydantic import AnyUrl
 
-from mcp.server import Server
+from mcp.server.lowlevel import Server
 from mcp.server.models import InitializationOptions
 from mcp.types import Resource, ServerCapabilities
 
@@ -28,6 +28,7 @@ def mcp_server() -> Server:
 
     return server
 
+
 @pytest.fixture
 def anyio_backend():
-    return 'asyncio'
+    return "asyncio"
