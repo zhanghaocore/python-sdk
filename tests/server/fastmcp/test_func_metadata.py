@@ -300,7 +300,7 @@ def test_complex_function_json_schema():
             },
             "field_with_default_via_field_annotation_before_nondefault_arg": {
                 "default": 1,
-                "title": "Field With Default Via Field Annotation Before Arg",
+                "title": "Field With Default Via Field Annotation Before Nondefault Arg",
                 "type": "integer",
             },
             "unannotated": {"title": "unannotated", "type": "string"},
@@ -319,7 +319,7 @@ def test_complex_function_json_schema():
                 "type": "string",
             },
             "my_model_a_with_default": {
-                "allOf": [{"$ref": "#/$defs/SomeInputModelA"}],
+                "$ref": "#/$defs/SomeInputModelA",
                 "default": {},
             },
             "an_int_with_default": {

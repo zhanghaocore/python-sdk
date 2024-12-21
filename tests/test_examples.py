@@ -5,7 +5,7 @@ import pytest
 from mcp.shared.memory import (
     create_connected_server_and_client_session as client_session,
 )
-from mcp.types import TextContent
+from mcp.types import TextContent, TextResourceContents
 
 
 @pytest.mark.anyio
@@ -41,11 +41,18 @@ async def test_complex_inputs():
 
 
 @pytest.mark.anyio
-async def test_desktop():
+async def test_desktop(monkeypatch):
     """Test the desktop server"""
+    from pathlib import Path
+
     from pydantic import AnyUrl
 
     from examples.fastmcp.desktop import mcp
+
+    # Mock desktop directory listing
+    mock_files = [Path("/fake/path/file1.txt"), Path("/fake/path/file2.txt")]
+    monkeypatch.setattr(Path, "iterdir", lambda self: mock_files)
+    monkeypatch.setattr(Path, "home", lambda: Path("/fake/home"))
 
     async with client_session(mcp._mcp_server) as client:
         # Test the add function
@@ -59,5 +66,7 @@ async def test_desktop():
         result = await client.read_resource(AnyUrl("dir://desktop"))
         assert len(result.contents) == 1
         content = result.contents[0]
-        assert isinstance(content, TextContent)
+        assert isinstance(content, TextResourceContents)
         assert isinstance(content.text, str)
+        assert "/fake/path/file1.txt" in content.text
+        assert "/fake/path/file2.txt" in content.text
