@@ -77,7 +77,8 @@ class StdioServerParameters(BaseModel):
     """
     The text encoding error handler.
 
-    See https://docs.python.org/3/library/codecs.html#codec-base-classes for explanations of possible values
+    See https://docs.python.org/3/library/codecs.html#codec-base-classes for
+    explanations of possible values
     """
 
 
@@ -108,7 +109,11 @@ async def stdio_client(server: StdioServerParameters):
         try:
             async with read_stream_writer:
                 buffer = ""
-                async for chunk in TextReceiveStream(process.stdout, encoding=server.encoding, errors=server.encoding_error_handler):
+                async for chunk in TextReceiveStream(
+                    process.stdout,
+                    encoding=server.encoding,
+                    errors=server.encoding_error_handler,
+                ):
                     lines = (buffer + chunk).split("\n")
                     buffer = lines.pop()
 
@@ -130,7 +135,12 @@ async def stdio_client(server: StdioServerParameters):
             async with write_stream_reader:
                 async for message in write_stream_reader:
                     json = message.model_dump_json(by_alias=True, exclude_none=True)
-                    await process.stdin.send((json + "\n").encode(encoding=server.encoding, errors=server.encoding_error_handler))
+                    await process.stdin.send(
+                        (json + "\n").encode(
+                            encoding=server.encoding,
+                            errors=server.encoding_error_handler,
+                        )
+                    )
         except anyio.ClosedResourceError:
             await anyio.lowlevel.checkpoint()
 
