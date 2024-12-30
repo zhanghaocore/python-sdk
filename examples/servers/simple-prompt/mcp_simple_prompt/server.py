@@ -106,7 +106,7 @@ def main(port: int, transport: str) -> int:
             debug=True,
             routes=[
                 Route("/sse", endpoint=handle_sse),
-                Mount("/messages/", app=sse.handle_post_message)
+                Mount("/messages/", app=sse.handle_post_message),
             ],
         )
 
