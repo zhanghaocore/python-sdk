@@ -11,7 +11,7 @@ Example usage:
     # Create Starlette routes for SSE and message handling
     routes = [
         Route("/sse", endpoint=handle_sse),
-        Route("/messages", endpoint=handle_messages, methods=["POST"])
+        Mount("/messages", endpoint=handle_messages, methods=["POST"])
     ]
 
     # Define handler functions
