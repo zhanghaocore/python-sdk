@@ -29,10 +29,15 @@ This file is intended to be used by an LLM such as Claude.
 - Handles both formatting and linting
 - For formatting: `uv run ruff format .`
 - For checking: `uv run ruff check .`
+- For auto-fixing: `uv run ruff check . --fix`
 - Common issues:
   - Line length (default 88 chars)
-  - Import sorting
+  - Import sorting (I001 errors)
   - Unused imports
+- When line length errors occur:
+  - For strings, use parentheses and line continuation
+  - For function calls, use multiple lines with proper indentation
+  - For imports, split into multiple lines
 
 ### Pyright
 - Type checker
@@ -41,6 +46,18 @@ This file is intended to be used by an LLM such as Claude.
 - Common issues:
   - Optional types need explicit None checks
   - String operations need type narrowing
+
+## Pre-commit Hooks
+
+- Configuration in `.pre-commit-config.yaml`
+- Runs automatically on git commit
+- Includes:
+  - Prettier for YAML/JSON formatting
+  - Ruff for Python formatting and linting
+- When updating ruff version:
+  - Check available versions on PyPI
+  - Update `rev` in config to match available version
+  - Add and commit config changes before other changes
 
 ## Best Practices
 
