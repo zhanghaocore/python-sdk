@@ -36,7 +36,9 @@ class TestServer:
         mcp = FastMCP()
 
         @mcp.tool(
-            description="🌟 This tool uses emojis and UTF-8 characters: á é í ó ú ñ 漢字 🎉"
+            description=(
+                "🌟 This tool uses emojis and UTF-8 characters: á é í ó ú ñ 漢字 🎉"
+            )
         )
         def hello_world(name: str = "世界") -> str:
             return f"¡Hola, {name}! 👋"
