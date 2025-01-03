@@ -35,7 +35,9 @@ class TestServer:
         """Test that FastMCP handles non-ASCII characters in descriptions correctly"""
         mcp = FastMCP()
 
-        @mcp.tool(description="🌟 This tool uses emojis and UTF-8 characters: á é í ó ú ñ 漢字 🎉")
+        @mcp.tool(
+            description="🌟 This tool uses emojis and UTF-8 characters: á é í ó ú ñ 漢字 🎉"
+        )
         def hello_world(name: str = "世界") -> str:
             return f"¡Hola, {name}! 👋"
 
@@ -43,6 +45,7 @@ class TestServer:
             tools = await client.list_tools()
             assert len(tools.tools) == 1
             tool = tools.tools[0]
+            assert tool.description is not None
             assert "🌟" in tool.description
             assert "漢字" in tool.description
             assert "🎉" in tool.description
