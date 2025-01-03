@@ -1,4 +1,5 @@
 import pytest
+
 from mcp.server.fastmcp import FastMCP
 
 pytestmark = pytest.mark.anyio

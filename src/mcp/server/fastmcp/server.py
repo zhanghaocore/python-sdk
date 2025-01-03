@@ -423,7 +423,7 @@ class FastMCP:
     async def run_sse_async(self) -> None:
         """Run the server using SSE transport."""
         from starlette.applications import Starlette
-        from starlette.routing import Route, Mount
+        from starlette.routing import Mount, Route
 
         sse = SseServerTransport("/messages/")
 

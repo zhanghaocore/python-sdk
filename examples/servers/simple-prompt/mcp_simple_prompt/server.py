@@ -90,7 +90,7 @@ def main(port: int, transport: str) -> int:
     if transport == "sse":
         from mcp.server.sse import SseServerTransport
         from starlette.applications import Starlette
-        from starlette.routing import Route, Mount
+        from starlette.routing import Mount, Route
 
         sse = SseServerTransport("/messages/")
 
