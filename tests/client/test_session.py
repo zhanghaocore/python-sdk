@@ -51,7 +51,7 @@ async def test_client_session_initialize():
                     prompts=None,
                 ),
                 serverInfo=Implementation(name="mock-server", version="0.1.0"),
-                instructions="The server instructions."
+                instructions="The server instructions.",
             )
         )
 
