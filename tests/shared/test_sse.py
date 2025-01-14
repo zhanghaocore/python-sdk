@@ -21,6 +21,7 @@ from mcp.types import (
     EmptyResult,
     ErrorData,
     InitializeResult,
+    ReadResourceResult,
     TextContent,
     TextResourceContents,
     Tool,
@@ -50,7 +51,11 @@ class TestServer(Server):
         async def handle_read_resource(uri: AnyUrl) -> str | bytes:
             if uri.scheme == "foobar":
                 return f"Read {uri.host}"
-            # TODO: make this an error
+            elif uri.scheme == "slow":
+                # Simulate a slow resource
+                await anyio.sleep(2.0)
+                return f"Slow response from {uri.host}"
+
             raise McpError(
                 error=ErrorData(
                     code=404, message="OOPS! no resource with that URI was found"
@@ -200,10 +205,11 @@ async def test_sse_client_basic_connection(server: None, server_url: str) -> Non
 async def initialized_sse_client_session(
     server, server_url: str
 ) -> AsyncGenerator[ClientSession, None]:
-    async with sse_client(server_url + "/sse") as streams:
+    async with sse_client(server_url + "/sse", sse_read_timeout=0.5) as streams:
         async with ClientSession(*streams) as session:
             await session.initialize()
             yield session
+
 
 
 @pytest.mark.anyio
@@ -226,4 +232,23 @@ async def test_sse_client_exception_handling(
         await session.read_resource(uri=AnyUrl("xxx://will-not-work"))
 
 
-# TODO: test that timeouts are respected and that the error comes back
+@pytest.mark.anyio
+@pytest.mark.skip(
+    "this test highlights a possible bug in SSE read timeout exception handling"
+)
+async def test_sse_client_timeout(
+    initialized_sse_client_session: ClientSession,
+) -> None:
+    session = initialized_sse_client_session
+
+    # sanity check that normal, fast responses are working
+    response = await session.read_resource(uri=AnyUrl("foobar://1"))
+    assert isinstance(response, ReadResourceResult)
+
+    with anyio.move_on_after(3):
+        with pytest.raises(McpError, match="Read timed out"):
+            response = await session.read_resource(uri=AnyUrl("slow://2"))
+            # we should receive an error here
+        return
+
+    pytest.fail("the client should have timed out and returned an error already")
