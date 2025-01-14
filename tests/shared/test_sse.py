@@ -1,5 +1,6 @@
 # test_sse.py
 import re
+import multiprocessing
 import socket
 import time
 import json
@@ -94,10 +95,15 @@ def space_around_test():
 
 @pytest.fixture()
 def server(server_app: Starlette, server_port: int):
-    server = uvicorn.Server(config=uvicorn.Config(app=server_app, host="127.0.0.1", port=server_port, log_level="error"))
-    server_thread = threading.Thread( target=server.run, daemon=True )
+    proc = multiprocessing.Process(target=uvicorn.run, daemon=True, kwargs={
+        "app": server_app,
+        "host": "127.0.0.1",
+        "port": server_port,
+        "log_level": "error"
+    })
     print(f'starting server on {server_port}')
-    server_thread.start()
+    proc.start()
+
     # Give server time to start
     while not server.started:
         print('waiting for server to start')
@@ -117,8 +123,9 @@ def server(server_app: Starlette, server_port: int):
                 s.close()
 
         # Wait for thread to finish
-        server_thread.join(timeout=2)
-        if server_thread.is_alive():
+        proc.terminate()
+        proc.join(timeout=2)
+        if proc.is_alive():
             print("Warning: Server thread did not exit cleanly")
             # Optionally, you could add more aggressive cleanup here
             import _thread
