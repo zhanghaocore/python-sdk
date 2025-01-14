@@ -24,20 +24,12 @@ async def sse_client(
     headers: dict[str, Any] | None = None,
     timeout: float = 5,
     sse_read_timeout: float = 60 * 5,
-    client: httpx.AsyncClient | None = None,
 ):
     """
     Client transport for SSE.
 
     `sse_read_timeout` determines how long (in seconds) the client will wait for a new
     event before disconnecting. All other HTTP operations are controlled by `timeout`.
-
-    Args:
-        url: The URL to connect to
-        headers: Optional headers to send with the request
-        timeout: Connection timeout in seconds
-        sse_read_timeout: Read timeout in seconds
-        client: Optional httpx.AsyncClient instance to use for requests
     """
     read_stream: MemoryObjectReceiveStream[types.JSONRPCMessage | Exception]
     read_stream_writer: MemoryObjectSendStream[types.JSONRPCMessage | Exception]
@@ -51,13 +43,7 @@ async def sse_client(
     async with anyio.create_task_group() as tg:
         try:
             logger.info(f"Connecting to SSE endpoint: {remove_request_params(url)}")
-            if client is None:
-                client = httpx.AsyncClient(headers=headers)
-                should_close_client = True
-            else:
-                should_close_client = False
-
-            try:
+            async with httpx.AsyncClient(headers=headers) as client:
                 async with aconnect_sse(
                     client,
                     "GET",
@@ -151,9 +137,6 @@ async def sse_client(
                         yield read_stream, write_stream
                     finally:
                         tg.cancel_scope.cancel()
-            finally:
-                if should_close_client:
-                    await client.aclose()
         finally:
             await read_stream_writer.aclose()
             await write_stream.aclose()
