@@ -2,11 +2,12 @@ import multiprocessing
 import socket
 import time
 import anyio
+from starlette.requests import Request
 import uvicorn
 import pytest
 from pydantic import AnyUrl
 import httpx
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Generator
 from starlette.applications import Starlette
 from starlette.routing import Mount, Route
 
@@ -56,7 +57,7 @@ class TestServer(Server):
             )
 
         @self.list_tools()
-        async def handle_list_tools():
+        async def handle_list_tools() -> list[Tool]:
             return [
                 Tool(
                     name="test_tool",
@@ -66,7 +67,7 @@ class TestServer(Server):
             ]
 
         @self.call_tool()
-        async def handle_call_tool(name: str, args: dict):
+        async def handle_call_tool(name: str, args: dict) -> list[TextContent]:
             return [TextContent(type="text", text=f"Called {name}")]
 
 
@@ -76,7 +77,7 @@ def make_server_app() -> Starlette:
     sse = SseServerTransport("/messages/")
     server = TestServer()
 
-    async def handle_sse(request):
+    async def handle_sse(request: Request) -> None:
         async with sse.connect_sse(
             request.scope, request.receive, request._send
         ) as streams:
@@ -94,14 +95,7 @@ def make_server_app() -> Starlette:
     return app
 
 
-@pytest.fixture(autouse=True)
-def space_around_test():
-    time.sleep(0.1)
-    yield
-    time.sleep(0.1)
-
-
-def run_server(server_port: int):
+def run_server(server_port: int) -> None:
     app = make_server_app()
     server = uvicorn.Server(
         config=uvicorn.Config(
@@ -118,7 +112,7 @@ def run_server(server_port: int):
 
 
 @pytest.fixture()
-def server(server_port: int):
+def server(server_port: int) -> Generator[None, None, None]:
     proc = multiprocessing.Process(
         target=run_server, kwargs={"server_port": server_port}, daemon=True
     )
@@ -161,11 +155,11 @@ async def http_client(server, server_url) -> AsyncGenerator[httpx.AsyncClient, N
 
 # Tests
 @pytest.mark.anyio
-async def test_raw_sse_connection(http_client: httpx.AsyncClient):
+async def test_raw_sse_connection(http_client: httpx.AsyncClient) -> None:
     """Test the SSE connection establishment simply with an HTTP client."""
     async with anyio.create_task_group() as tg:
 
-        async def connection_test():
+        async def connection_test() -> None:
             async with http_client.stream("GET", "/sse") as response:
                 assert response.status_code == 200
                 assert (
@@ -189,7 +183,7 @@ async def test_raw_sse_connection(http_client: httpx.AsyncClient):
 
 
 @pytest.mark.anyio
-async def test_sse_client_basic_connection(server, server_url):
+async def test_sse_client_basic_connection(server: None, server_url: str) -> None:
     async with sse_client(server_url + "/sse") as streams:
         async with ClientSession(*streams) as session:
             # Test initialization
@@ -215,7 +209,7 @@ async def initialized_sse_client_session(
 @pytest.mark.anyio
 async def test_sse_client_happy_request_and_response(
     initialized_sse_client_session: ClientSession,
-):
+) -> None:
     session = initialized_sse_client_session
     response = await session.read_resource(uri=AnyUrl("foobar://should-work"))
     assert len(response.contents) == 1
@@ -226,7 +220,7 @@ async def test_sse_client_happy_request_and_response(
 @pytest.mark.anyio
 async def test_sse_client_exception_handling(
     initialized_sse_client_session: ClientSession,
-):
+) -> None:
     session = initialized_sse_client_session
     with pytest.raises(McpError, match="OOPS! no resource with that URI was found"):
         await session.read_resource(uri=AnyUrl("xxx://will-not-work"))
