@@ -1,21 +1,22 @@
 import multiprocessing
 import socket
 import time
-import anyio
-from starlette.requests import Request
-import uvicorn
-import pytest
-from pydantic import AnyUrl
-import httpx
 from typing import AsyncGenerator, Generator
+
+import anyio
+import httpx
+import pytest
+import uvicorn
+from pydantic import AnyUrl
 from starlette.applications import Starlette
+from starlette.requests import Request
 from starlette.routing import Mount, Route
 
-from mcp.shared.exceptions import McpError
 from mcp.client.session import ClientSession
 from mcp.client.sse import sse_client
 from mcp.server import Server
 from mcp.server.sse import SseServerTransport
+from mcp.shared.exceptions import McpError
 from mcp.types import (
     EmptyResult,
     ErrorData,
@@ -157,8 +158,7 @@ async def http_client(server, server_url) -> AsyncGenerator[httpx.AsyncClient, N
 @pytest.mark.anyio
 async def test_raw_sse_connection(http_client: httpx.AsyncClient) -> None:
     """Test the SSE connection establishment simply with an HTTP client."""
-    async with anyio.create_task_group() as tg:
-
+    async with anyio.create_task_group():
         async def connection_test() -> None:
             async with http_client.stream("GET", "/sse") as response:
                 assert response.status_code == 200
