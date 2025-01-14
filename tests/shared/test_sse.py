@@ -1,15 +1,10 @@
-import re
 import multiprocessing
 import socket
 import time
-import json
 import anyio
-import threading
 import uvicorn
 import pytest
 from pydantic import AnyUrl
-from pydantic_core import Url
-import pytest
 import httpx
 from typing import AsyncGenerator
 from starlette.applications import Starlette
