@@ -91,10 +91,15 @@ class Server:
             else None,
         )
         try:
-            stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))
+            stdio_transport = await self.exit_stack.enter_async_context(
+                stdio_client(server_params)
+            )
             read, write = stdio_transport
-            self.session = await self.exit_stack.enter_async_context(ClientSession(read, write))
-            await self.session.initialize()
+            session = await self.exit_stack.enter_async_context(
+                ClientSession(read, write)
+            )
+            await session.initialize()
+            self.session = session
         except Exception as e:
             logging.error(f"Error initializing server {self.name}: {e}")
             await self.cleanup()
@@ -257,7 +262,7 @@ class LLMClient:
             error_message = f"Error getting LLM response: {str(e)}"
             logging.error(error_message)
 
-            if hasattr(e, 'response'):
+            if isinstance(e, httpx.HTTPStatusError):
                 status_code = e.response.status_code
                 logging.error(f"Status code: {status_code}")
                 logging.error(f"Response details: {e.response.text}")
