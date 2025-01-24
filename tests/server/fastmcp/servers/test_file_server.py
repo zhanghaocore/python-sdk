@@ -88,7 +88,9 @@ async def test_list_resources(mcp: FastMCP):
 
 @pytest.mark.anyio
 async def test_read_resource_dir(mcp: FastMCP):
-    files = await mcp.read_resource("dir://test_dir")
+    files, mime_type = await mcp.read_resource("dir://test_dir")
+    assert mime_type == "text/plain"
+
     files = json.loads(files)
 
     assert sorted([Path(f).name for f in files]) == [
@@ -100,7 +102,7 @@ async def test_read_resource_dir(mcp: FastMCP):
 
 @pytest.mark.anyio
 async def test_read_resource_file(mcp: FastMCP):
-    result = await mcp.read_resource("file://test_dir/example.py")
+    result, _ = await mcp.read_resource("file://test_dir/example.py")
     assert result == "print('hello world')"
 
 
@@ -117,5 +119,5 @@ async def test_delete_file_and_check_resources(mcp: FastMCP, test_dir: Path):
     await mcp.call_tool(
         "delete_file", arguments=dict(path=str(test_dir / "example.py"))
     )
-    result = await mcp.read_resource("file://test_dir/example.py")
+    result, _ = await mcp.read_resource("file://test_dir/example.py")
     assert result == "File not found"

@@ -252,32 +252,55 @@ class Server:
         return decorator
 
     def read_resource(self):
-        def decorator(func: Callable[[AnyUrl], Awaitable[str | bytes]]):
+        def decorator(
+            func: Callable[[AnyUrl], Awaitable[str | bytes | tuple[str | bytes, str]]],
+        ):
             logger.debug("Registering handler for ReadResourceRequest")
 
             async def handler(req: types.ReadResourceRequest):
                 result = await func(req.params.uri)
+
+                def create_content(data: str | bytes, mime_type: str):
+                    match data:
+                        case str() as data:
+                            return types.TextResourceContents(
+                                uri=req.params.uri,
+                                text=data,
+                                mimeType=mime_type,
+                            )
+                        case bytes() as data:
+                            import base64
+
+                            return types.BlobResourceContents(
+                                uri=req.params.uri,
+                                blob=base64.urlsafe_b64encode(data).decode(),
+                                mimeType=mime_type,
+                            )
+
                 match result:
-                    case str(s):
-                        content = types.TextResourceContents(
-                            uri=req.params.uri,
-                            text=s,
-                            mimeType="text/plain",
+                    case str() | bytes() as data:
+                        default_mime = (
+                            "text/plain"
+                            if isinstance(data, str)
+                            else "application/octet-stream"
                         )
-                    case bytes(b):
-                        import base64
-
-                        content = types.BlobResourceContents(
-                            uri=req.params.uri,
-                            blob=base64.urlsafe_b64encode(b).decode(),
-                            mimeType="application/octet-stream",
+                        content = create_content(data, default_mime)
+                        return types.ServerResult(
+                            types.ReadResourceResult(
+                                contents=[content],
+                            )
                         )
-
-                return types.ServerResult(
-                    types.ReadResourceResult(
-                        contents=[content],
-                    )
-                )
+                    case (data, mime_type):
+                        content = create_content(data, mime_type)
+                        return types.ServerResult(
+                            types.ReadResourceResult(
+                                contents=[content],
+                            )
+                        )
+                    case _:
+                        raise ValueError(
+                            f"Unexpected return type from read_resource: {type(result)}"
+                        )
 
             self.request_handlers[types.ReadResourceRequest] = handler
             return func

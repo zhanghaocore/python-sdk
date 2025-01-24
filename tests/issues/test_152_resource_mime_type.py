@@ -98,9 +98,9 @@ async def test_lowlevel_resource_mime_type():
     @server.read_resource()
     async def handle_read_resource(uri: AnyUrl):
         if str(uri) == "test://image":
-            return base64_string
+            return (base64_string, "image/png")
         elif str(uri) == "test://image_bytes":
-            return image_bytes
+            return (bytes(image_bytes), "image/png")
         raise Exception(f"Resource not found: {uri}")
 
     # Test that resources are listed with correct mime type
