@@ -33,7 +33,7 @@ This document contains critical information about working with this codebase. Fo
 
 - For commits related to a Github issue, add
   ```bash
-  git commit --trailer "Github-Issue:<number>"
+  git commit --trailer "Github-Issue:#<number>"
   ```
 - NEVER ever mention a `co-authored-by` or similar aspects. In particular, never
   mention the tool used to create the commit message or PR.
