@@ -6,6 +6,7 @@ from pydantic import AnyUrl
 from mcp import types
 from mcp.server.fastmcp import FastMCP
 from mcp.server.lowlevel import Server
+from mcp.server.lowlevel.helper_types import ReadResourceContents
 from mcp.shared.memory import (
     create_connected_server_and_client_session as client_session,
 )
@@ -98,9 +99,11 @@ async def test_lowlevel_resource_mime_type():
     @server.read_resource()
     async def handle_read_resource(uri: AnyUrl):
         if str(uri) == "test://image":
-            return (base64_string, "image/png")
+            return ReadResourceContents(content=base64_string, mime_type="image/png")
         elif str(uri) == "test://image_bytes":
-            return (bytes(image_bytes), "image/png")
+            return ReadResourceContents(
+                content=bytes(image_bytes), mime_type="image/png"
+            )
         raise Exception(f"Resource not found: {uri}")
 
     # Test that resources are listed with correct mime type
