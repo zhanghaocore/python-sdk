@@ -518,6 +518,10 @@ class TestContextInjection:
 
     @pytest.mark.anyio
     async def test_context_logging(self):
+        from unittest.mock import patch
+
+        import mcp.server.session
+
         """Test that context logging methods work."""
         mcp = FastMCP()
 
@@ -529,12 +533,26 @@ class TestContextInjection:
             return f"Logged messages for {msg}"
 
         mcp.add_tool(logging_tool)
-        async with client_session(mcp._mcp_server) as client:
-            result = await client.call_tool("logging_tool", {"msg": "test"})
-            assert len(result.content) == 1
-            content = result.content[0]
-            assert isinstance(content, TextContent)
-            assert "Logged messages for test" in content.text
+
+        with patch("mcp.server.session.ServerSession.send_log_message") as mock_log:
+            async with client_session(mcp._mcp_server) as client:
+                result = await client.call_tool("logging_tool", {"msg": "test"})
+                assert len(result.content) == 1
+                content = result.content[0]
+                assert isinstance(content, TextContent)
+                assert "Logged messages for test" in content.text
+
+                assert mock_log.call_count == 4
+                mock_log.assert_any_call(
+                    level="debug", data="Debug message", logger=None
+                )
+                mock_log.assert_any_call(level="info", data="Info message", logger=None)
+                mock_log.assert_any_call(
+                    level="warning", data="Warning message", logger=None
+                )
+                mock_log.assert_any_call(
+                    level="error", data="Error message", logger=None
+                )
 
     @pytest.mark.anyio
     async def test_optional_context(self):
@@ -563,8 +581,8 @@ class TestContextInjection:
 
         @mcp.tool()
         async def tool_with_resource(ctx: Context) -> str:
-            data, mime_type = await ctx.read_resource("test://data")
-            return f"Read resource: {data} with mime type {mime_type}"
+            data = await ctx.read_resource("test://data")
+            return f"Read resource: {data}"
 
         async with client_session(mcp._mcp_server) as client:
             result = await client.call_tool("tool_with_resource", {})
