@@ -599,7 +599,7 @@ class Context(BaseModel):
             else None
         )
 
-        if progress_token == None:
+        if progress_token is None:
             return
 
         await self.request_context.session.send_progress_notification(
