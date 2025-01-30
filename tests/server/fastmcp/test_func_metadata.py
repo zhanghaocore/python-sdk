@@ -237,26 +237,23 @@ async def test_lambda_function():
 def test_complex_function_json_schema():
     """Test JSON schema generation for complex function arguments.
     
-    Note: This test accepts two equivalent JSON Schema formats for models with defaults:
-    1. Pre-pydantic 2.7.2:
+    Note: Different versions of pydantic output slightly different
+    JSON Schema formats for model fields with defaults. The format changed in 2.9.0:
+
+    1. Before 2.9.0:
+       {
+         "allOf": [{"$ref": "#/$defs/Model"}],
+         "default": {}
+       }
+       
+    2. Since 2.9.0:
        {
          "$ref": "#/$defs/Model",
          "default": {}
        }
        
-    2. Pydantic 2.7.2+:
-       {
-         "allOf": [
-           {
-             "$ref": "#/$defs/Model"
-           }
-         ],
-         "default": {}
-       }
-       
-    Both formats are valid JSON Schema and represent the same validation rules.
-    The newer format using allOf is more correct according to the JSON Schema spec
-    as it properly composes the reference with additional properties.
+    Both formats are valid and functionally equivalent. This test accepts either format
+    to ensure compatibility across our supported pydantic versions.
     
     This change in format does not affect runtime behavior since:
     1. Both schemas validate the same way
