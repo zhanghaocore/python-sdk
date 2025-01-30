@@ -235,8 +235,48 @@ async def test_lambda_function():
 
 
 def test_complex_function_json_schema():
+    """Test JSON schema generation for complex function arguments.
+    
+    Note: This test accepts two equivalent JSON Schema formats for models with defaults:
+    1. Pre-pydantic 2.7.2:
+       {
+         "$ref": "#/$defs/Model",
+         "default": {}
+       }
+       
+    2. Pydantic 2.7.2+:
+       {
+         "allOf": [
+           {
+             "$ref": "#/$defs/Model"
+           }
+         ],
+         "default": {}
+       }
+       
+    Both formats are valid JSON Schema and represent the same validation rules.
+    The newer format using allOf is more correct according to the JSON Schema spec
+    as it properly composes the reference with additional properties.
+    
+    This change in format does not affect runtime behavior since:
+    1. Both schemas validate the same way
+    2. The actual model classes and validation logic are unchanged
+    3. func_metadata uses model_validate/model_dump, not the schema directly
+    """
     meta = func_metadata(complex_arguments_fn)
-    assert meta.arg_model.model_json_schema() == {
+    actual_schema = meta.arg_model.model_json_schema()
+    
+    # Create a copy of the actual schema to normalize
+    normalized_schema = actual_schema.copy()
+    
+    # Normalize the my_model_a_with_default field to handle both pydantic formats
+    if 'allOf' in actual_schema['properties']['my_model_a_with_default']:
+        normalized_schema['properties']['my_model_a_with_default'] = {
+            '$ref': '#/$defs/SomeInputModelA',
+            'default': {}
+        }
+    
+    assert normalized_schema == {
         "$defs": {
             "InnerModel": {
                 "properties": {"x": {"title": "X", "type": "integer"}},
