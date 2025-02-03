@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Generic, Literal, TypeVar
+from typing import Annotated, Any, Callable, Generic, Literal, TypeAlias, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, FileUrl, RootModel
 from pydantic.networks import AnyUrl
@@ -27,6 +27,7 @@ ProgressToken = str | int
 Cursor = str
 Role = Literal["user", "assistant"]
 RequestId = str | int
+AnyFunction: TypeAlias = Callable[..., Any]
 
 
 class RequestParams(BaseModel):
