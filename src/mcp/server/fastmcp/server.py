@@ -25,6 +25,7 @@ from mcp.server.sse import SseServerTransport
 from mcp.server.stdio import stdio_server
 from mcp.shared.context import RequestContext
 from mcp.types import (
+    AnyFunction,
     EmbeddedResource,
     GetPromptResult,
     ImageContent,
@@ -165,7 +166,7 @@ class FastMCP:
         return Context(request_context=request_context, fastmcp=self)
 
     async def call_tool(
-        self, name: str, arguments: dict
+        self, name: str, arguments: dict[str, Any]
     ) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
         """Call a tool by name with arguments."""
         context = self.get_context()
@@ -214,7 +215,7 @@ class FastMCP:
 
     def add_tool(
         self,
-        fn: Callable,
+        fn: AnyFunction,
         name: str | None = None,
         description: str | None = None,
     ) -> None:
@@ -230,7 +231,9 @@ class FastMCP:
         """
         self._tool_manager.add_tool(fn, name=name, description=description)
 
-    def tool(self, name: str | None = None, description: str | None = None) -> Callable:
+    def tool(
+        self, name: str | None = None, description: str | None = None
+    ) -> Callable[[AnyFunction], AnyFunction]:
         """Decorator to register a tool.
 
         Tools can optionally request a Context object by adding a parameter with the
@@ -263,7 +266,7 @@ class FastMCP:
                 "Did you forget to call it? Use @tool() instead of @tool"
             )
 
-        def decorator(fn: Callable) -> Callable:
+        def decorator(fn: AnyFunction) -> AnyFunction:
             self.add_tool(fn, name=name, description=description)
             return fn
 
@@ -284,7 +287,7 @@ class FastMCP:
         name: str | None = None,
         description: str | None = None,
         mime_type: str | None = None,
-    ) -> Callable:
+    ) -> Callable[[AnyFunction], AnyFunction]:
         """Decorator to register a function as a resource.
 
         The function will be called when the resource is read to generate its content.
@@ -328,7 +331,7 @@ class FastMCP:
                 "Did you forget to call it? Use @resource('uri') instead of @resource"
             )
 
-        def decorator(fn: Callable) -> Callable:
+        def decorator(fn: AnyFunction) -> AnyFunction:
             # Check if this should be a template
             has_uri_params = "{" in uri and "}" in uri
             has_func_params = bool(inspect.signature(fn).parameters)
@@ -376,7 +379,7 @@ class FastMCP:
 
     def prompt(
         self, name: str | None = None, description: str | None = None
-    ) -> Callable:
+    ) -> Callable[[AnyFunction], AnyFunction]:
         """Decorator to register a prompt.
 
         Args:
@@ -417,7 +420,7 @@ class FastMCP:
                 "Did you forget to call it? Use @prompt() instead of @prompt"
             )
 
-        def decorator(func: Callable) -> Callable:
+        def decorator(func: AnyFunction) -> AnyFunction:
             prompt = Prompt.from_function(func, name=name, description=description)
             self.add_prompt(prompt)
             return func
