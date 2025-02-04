@@ -43,7 +43,7 @@ def server_url(server_port: int) -> str:
 
 
 # Test server implementation
-class TestServer(Server):
+class ServerTest(Server):
     def __init__(self):
         super().__init__(SERVER_NAME)
 
@@ -81,7 +81,7 @@ class TestServer(Server):
 def make_server_app() -> Starlette:
     """Create test Starlette app with SSE transport"""
     sse = SseServerTransport("/messages/")
-    server = TestServer()
+    server = ServerTest()
 
     async def handle_sse(request: Request) -> None:
         async with sse.connect_sse(
