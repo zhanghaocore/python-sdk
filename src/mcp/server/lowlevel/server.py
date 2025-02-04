@@ -453,10 +453,15 @@ class Server:
                     logger.debug(f"Received message: {message}")
 
                     match message:
-                        case RequestResponder(request=types.ClientRequest(root=req)):
-                            await self._handle_request(
-                                message, req, session, raise_exceptions
-                            )
+                        case (
+                            RequestResponder(
+                                request=types.ClientRequest(root=req)
+                            ) as responder
+                        ):
+                            with responder:
+                                await self._handle_request(
+                                    message, req, session, raise_exceptions
+                                )
                         case types.ClientNotification(root=notify):
                             await self._handle_notification(notify)
 
