@@ -100,7 +100,7 @@ class Settings(BaseSettings, Generic[LifespanResultT]):
 
     lifespan: (
         Callable[["FastMCP"], AbstractAsyncContextManager[LifespanResultT]] | None
-    ) = Field(None, description="Lifespan contexte manager")
+    ) = Field(None, description="Lifespan context manager")
 
 
 def lifespan_wrapper(

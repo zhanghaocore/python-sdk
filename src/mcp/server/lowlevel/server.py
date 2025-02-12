@@ -85,7 +85,10 @@ from mcp.shared.session import RequestResponder
 
 logger = logging.getLogger(__name__)
 
-request_ctx: contextvars.ContextVar[RequestContext[ServerSession]] = (
+LifespanResultT = TypeVar("LifespanResultT")
+
+# This will be properly typed in each Server instance's context
+request_ctx: contextvars.ContextVar[RequestContext[ServerSession, Any]] = (
     contextvars.ContextVar("request_ctx")
 )
 
@@ -100,9 +103,6 @@ class NotificationOptions:
         self.prompts_changed = prompts_changed
         self.resources_changed = resources_changed
         self.tools_changed = tools_changed
-
-
-LifespanResultT = TypeVar("LifespanResultT")
 
 
 @asynccontextmanager
@@ -212,7 +212,7 @@ class Server(Generic[LifespanResultT]):
         )
 
     @property
-    def request_context(self) -> RequestContext[ServerSession]:
+    def request_context(self) -> RequestContext[ServerSession, LifespanResultT]:
         """If called outside of a request context, this will raise a LookupError."""
         return request_ctx.get()
 
@@ -510,7 +510,7 @@ class Server(Generic[LifespanResultT]):
         message: RequestResponder,
         req: Any,
         session: ServerSession,
-        lifespan_context: object,
+        lifespan_context: LifespanResultT,
         raise_exceptions: bool,
     ):
         logger.info(f"Processing request of type {type(req).__name__}")
