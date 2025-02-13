@@ -459,30 +459,6 @@ class Server(Generic[LifespanResultT]):
 
         return decorator
 
-    async def _handle_message(
-        self,
-        message: RequestResponder[types.ClientRequest, types.ServerResult]
-        | types.ClientNotification
-        | Exception,
-        session: ServerSession,
-        lifespan_context: LifespanResultT,
-        raise_exceptions: bool = False,
-    ):
-        with warnings.catch_warnings(record=True) as w:
-            match message:
-                case (
-                    RequestResponder(request=types.ClientRequest(root=req)) as responder
-                ):
-                    with responder:
-                        await self._handle_request(
-                            message, req, session, lifespan_context, raise_exceptions
-                        )
-                case types.ClientNotification(root=notify):
-                    await self._handle_notification(notify)
-
-            for warning in w:
-                logger.info(f"Warning: {warning.category.__name__}: {warning.message}")
-
     async def run(
         self,
         read_stream: MemoryObjectReceiveStream[types.JSONRPCMessage | Exception],
@@ -511,6 +487,30 @@ class Server(Generic[LifespanResultT]):
                         lifespan_context,
                         raise_exceptions,
                     )
+
+    async def _handle_message(
+        self,
+        message: RequestResponder[types.ClientRequest, types.ServerResult]
+        | types.ClientNotification
+        | Exception,
+        session: ServerSession,
+        lifespan_context: LifespanResultT,
+        raise_exceptions: bool = False,
+    ):
+        with warnings.catch_warnings(record=True) as w:
+            match message:
+                case (
+                    RequestResponder(request=types.ClientRequest(root=req)) as responder
+                ):
+                    with responder:
+                        await self._handle_request(
+                            message, req, session, lifespan_context, raise_exceptions
+                        )
+                case types.ClientNotification(root=notify):
+                    await self._handle_notification(notify)
+
+            for warning in w:
+                logger.info(f"Warning: {warning.category.__name__}: {warning.message}")
 
     async def _handle_request(
         self,
