@@ -59,8 +59,7 @@ async def websocket_client(
             try:
                 async for raw_text in ws:
                     try:
-                        data = json.loads(raw_text)
-                        message = types.JSONRPCMessage.model_validate(data)
+                        message = types.JSONRPCMessage.model_validate_json(raw_text)
                         await read_stream_send.send(message)
                     except Exception as exc:
                         # If JSON parse or model validation fails, send the exception
