@@ -67,9 +67,11 @@ messages from the client.
 import contextvars
 import logging
 import warnings
-from collections.abc import Awaitable, Callable
-from typing import Any, Sequence
+from collections.abc import Awaitable, Callable, Iterable
+from contextlib import AbstractAsyncContextManager, AsyncExitStack, asynccontextmanager
+from typing import Any, AsyncIterator, Generic, TypeVar
 
+import anyio
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from pydantic import AnyUrl
 
@@ -84,7 +86,10 @@ from mcp.shared.session import RequestResponder
 
 logger = logging.getLogger(__name__)
 
-request_ctx: contextvars.ContextVar[RequestContext[ServerSession]] = (
+LifespanResultT = TypeVar("LifespanResultT")
+
+# This will be properly typed in each Server instance's context
+request_ctx: contextvars.ContextVar[RequestContext[ServerSession, Any]] = (
     contextvars.ContextVar("request_ctx")
 )
 
@@ -101,13 +106,33 @@ class NotificationOptions:
         self.tools_changed = tools_changed
 
 
-class Server:
+@asynccontextmanager
+async def lifespan(server: "Server") -> AsyncIterator[object]:
+    """Default lifespan context manager that does nothing.
+
+    Args:
+        server: The server instance this lifespan is managing
+
+    Returns:
+        An empty context object
+    """
+    yield {}
+
+
+class Server(Generic[LifespanResultT]):
     def __init__(
-        self, name: str, version: str | None = None, instructions: str | None = None
+        self,
+        name: str,
+        version: str | None = None,
+        instructions: str | None = None,
+        lifespan: Callable[
+            ["Server"], AbstractAsyncContextManager[LifespanResultT]
+        ] = lifespan,
     ):
         self.name = name
         self.version = version
         self.instructions = instructions
+        self.lifespan = lifespan
         self.request_handlers: dict[
             type, Callable[..., Awaitable[types.ServerResult]]
         ] = {
@@ -188,7 +213,7 @@ class Server:
         )
 
     @property
-    def request_context(self) -> RequestContext[ServerSession]:
+    def request_context(self) -> RequestContext[ServerSession, LifespanResultT]:
         """If called outside of a request context, this will raise a LookupError."""
         return request_ctx.get()
 
@@ -254,7 +279,9 @@ class Server:
 
     def read_resource(self):
         def decorator(
-            func: Callable[[AnyUrl], Awaitable[str | bytes | ReadResourceContents]],
+            func: Callable[
+                [AnyUrl], Awaitable[str | bytes | Iterable[ReadResourceContents]]
+            ],
         ):
             logger.debug("Registering handler for ReadResourceRequest")
 
@@ -282,13 +309,22 @@ class Server:
                     case str() | bytes() as data:
                         warnings.warn(
                             "Returning str or bytes from read_resource is deprecated. "
-                            "Use ReadResourceContents instead.",
+                            "Use Iterable[ReadResourceContents] instead.",
                             DeprecationWarning,
                             stacklevel=2,
                         )
                         content = create_content(data, None)
-                    case ReadResourceContents() as contents:
-                        content = create_content(contents.content, contents.mime_type)
+                    case Iterable() as contents:
+                        contents_list = [
+                            create_content(content_item.content, content_item.mime_type)
+                            for content_item in contents
+                            if isinstance(content_item, ReadResourceContents)
+                        ]
+                        return types.ServerResult(
+                            types.ReadResourceResult(
+                                contents=contents_list,
+                            )
+                        )
                     case _:
                         raise ValueError(
                             f"Unexpected return type from read_resource: {type(result)}"
@@ -362,7 +398,7 @@ class Server:
             func: Callable[
                 ...,
                 Awaitable[
-                    Sequence[
+                    Iterable[
                         types.TextContent | types.ImageContent | types.EmbeddedResource
                     ]
                 ],
@@ -445,31 +481,54 @@ class Server:
         # in-process servers.
         raise_exceptions: bool = False,
     ):
-        with warnings.catch_warnings(record=True) as w:
-            async with ServerSession(
-                read_stream, write_stream, initialization_options
-            ) as session:
+        async with AsyncExitStack() as stack:
+            lifespan_context = await stack.enter_async_context(self.lifespan(self))
+            session = await stack.enter_async_context(
+                ServerSession(read_stream, write_stream, initialization_options)
+            )
+
+            async with anyio.create_task_group() as tg:
                 async for message in session.incoming_messages:
                     logger.debug(f"Received message: {message}")
 
-                    match message:
-                        case RequestResponder(request=types.ClientRequest(root=req)):
-                            await self._handle_request(
-                                message, req, session, raise_exceptions
-                            )
-                        case types.ClientNotification(root=notify):
-                            await self._handle_notification(notify)
+                    tg.start_soon(
+                        self._handle_message,
+                        message,
+                        session,
+                        lifespan_context,
+                        raise_exceptions,
+                    )
 
-                    for warning in w:
-                        logger.info(
-                            f"Warning: {warning.category.__name__}: {warning.message}"
+    async def _handle_message(
+        self,
+        message: RequestResponder[types.ClientRequest, types.ServerResult]
+        | types.ClientNotification
+        | Exception,
+        session: ServerSession,
+        lifespan_context: LifespanResultT,
+        raise_exceptions: bool = False,
+    ):
+        with warnings.catch_warnings(record=True) as w:
+            match message:
+                case (
+                    RequestResponder(request=types.ClientRequest(root=req)) as responder
+                ):
+                    with responder:
+                        await self._handle_request(
+                            message, req, session, lifespan_context, raise_exceptions
                         )
+                case types.ClientNotification(root=notify):
+                    await self._handle_notification(notify)
+
+            for warning in w:
+                logger.info(f"Warning: {warning.category.__name__}: {warning.message}")
 
     async def _handle_request(
         self,
         message: RequestResponder,
         req: Any,
         session: ServerSession,
+        lifespan_context: LifespanResultT,
         raise_exceptions: bool,
     ):
         logger.info(f"Processing request of type {type(req).__name__}")
@@ -486,6 +545,7 @@ class Server:
                         message.request_id,
                         message.request_meta,
                         session,
+                        lifespan_context,
                     )
                 )
                 response = await handler(req)
