@@ -4,26 +4,23 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 import anyio
-import websockets
-from anyio.streams.memory import (
-    MemoryObjectReceiveStream,
-    MemoryObjectSendStream,
-    create_memory_object_stream,
-)
+from pydantic import ValidationError
+from websockets.asyncio.client import connect as ws_connect
+from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
+from websockets.typing import Subprotocol
 
 import mcp.types as types
 
 logger = logging.getLogger(__name__)
 
+
 @asynccontextmanager
-async def websocket_client(
-    url: str
-) -> AsyncGenerator[
+async def websocket_client(url: str) -> AsyncGenerator[
     tuple[
         MemoryObjectReceiveStream[types.JSONRPCMessage | Exception],
         MemoryObjectSendStream[types.JSONRPCMessage],
     ],
-    None
+    None,
 ]:
     """
     WebSocket client transport for MCP, symmetrical to the server version.
@@ -38,13 +35,13 @@ async def websocket_client(
     """
 
     # Create two in-memory streams:
-    # - One for incoming messages (read_stream_recv, written by ws_reader)
-    # - One for outgoing messages (write_stream_send, read by ws_writer)
-    read_stream_send, read_stream_recv = create_memory_object_stream(0)
-    write_stream_send, write_stream_recv = create_memory_object_stream(0)
+    # - One for incoming messages (read_stream, written by ws_reader)
+    # - One for outgoing messages (write_stream, read by ws_writer)
+    read_stream_writer, read_stream = anyio.create_memory_object_stream(0)
+    write_stream, write_stream_reader = anyio.create_memory_object_stream(0)
 
     # Connect using websockets, requesting the "mcp" subprotocol
-    async with websockets.connect(url, subprotocols=["mcp"]) as ws:
+    async with ws_connect(url, subprotocols=[Subprotocol("mcp")]) as ws:
         # Optional check to ensure the server actually accepted "mcp"
         if ws.subprotocol != "mcp":
             raise ValueError(
@@ -54,38 +51,34 @@ async def websocket_client(
         async def ws_reader():
             """
             Reads text messages from the WebSocket, parses them as JSON-RPC messages,
-            and sends them into read_stream_send.
+            and sends them into read_stream_writer.
             """
             try:
-                async for raw_text in ws:
-                    try:
-                        message = types.JSONRPCMessage.model_validate_json(raw_text)
-                        await read_stream_send.send(message)
-                    except Exception as exc:
-                        # If JSON parse or model validation fails, send the exception
-                        await read_stream_send.send(exc)
-            except (anyio.ClosedResourceError, websockets.ConnectionClosed):
-                pass
-            finally:
-                # Ensure our read stream is closed
-                await read_stream_send.aclose()
+                async with read_stream_writer:
+                    async for raw_text in ws:
+                        try:
+                            message = types.JSONRPCMessage.model_validate_json(raw_text)
+                            await read_stream_writer.send(message)
+                        except ValidationError as exc:
+                            # If JSON parse or model validation fails, send the exception
+                            await read_stream_writer.send(exc)
+            except (anyio.ClosedResourceError, Exception):
+                await ws.close()
 
         async def ws_writer():
             """
-            Reads JSON-RPC messages from write_stream_recv and sends them to the server.
+            Reads JSON-RPC messages from write_stream_reader and sends them to the server.
             """
             try:
-                async for message in write_stream_recv:
-                    # Convert to a dict, then to JSON
-                    msg_dict = message.model_dump(
-                        by_alias=True, mode="json", exclude_none=True
-                    )
-                    await ws.send(json.dumps(msg_dict))
-            except (anyio.ClosedResourceError, websockets.ConnectionClosed):
-                pass
-            finally:
-                # Ensure our write stream is closed
-                await write_stream_recv.aclose()
+                async with write_stream_reader:
+                    async for message in write_stream_reader:
+                        # Convert to a dict, then to JSON
+                        msg_dict = message.model_dump(
+                            by_alias=True, mode="json", exclude_none=True
+                        )
+                        await ws.send(json.dumps(msg_dict))
+            except (anyio.ClosedResourceError, Exception):
+                await ws.close()
 
         async with anyio.create_task_group() as tg:
             # Start reader and writer tasks
@@ -93,7 +86,7 @@ async def websocket_client(
             tg.start_soon(ws_writer)
 
             # Yield the receive/send streams
-            yield (read_stream_recv, write_stream_send)
+            yield (read_stream, write_stream)
 
             # Once the caller's 'async with' block exits, we shut down
             tg.cancel_scope.cancel()
