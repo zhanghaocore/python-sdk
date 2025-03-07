@@ -42,12 +42,6 @@ async def websocket_client(url: str) -> AsyncGenerator[
 
     # Connect using websockets, requesting the "mcp" subprotocol
     async with ws_connect(url, subprotocols=[Subprotocol("mcp")]) as ws:
-        # Optional check to ensure the server actually accepted "mcp"
-        if ws.subprotocol != "mcp":
-            raise ValueError(
-                f"Server did not accept subprotocol 'mcp'. Actual subprotocol: {ws.subprotocol}"
-            )
-
         async def ws_reader():
             """
             Reads text messages from the WebSocket, parses them as JSON-RPC messages,
