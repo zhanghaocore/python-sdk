@@ -56,8 +56,9 @@ async def websocket_client(url: str) -> AsyncGenerator[
                         except ValidationError as exc:
                             # If JSON parse or model validation fails, send the exception
                             await read_stream_writer.send(exc)
-            except (anyio.ClosedResourceError, Exception):
+            except (anyio.ClosedResourceError, Exception) as e:
                 await ws.close()
+                raise e
 
         async def ws_writer():
             """
@@ -71,8 +72,9 @@ async def websocket_client(url: str) -> AsyncGenerator[
                             by_alias=True, mode="json", exclude_none=True
                         )
                         await ws.send(json.dumps(msg_dict))
-            except (anyio.ClosedResourceError, Exception):
+            except (anyio.ClosedResourceError, Exception) as e:
                 await ws.close()
+                raise e
 
         async with anyio.create_task_group() as tg:
             # Start reader and writer tasks
