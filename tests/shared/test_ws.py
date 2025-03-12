@@ -188,7 +188,9 @@ async def test_ws_client_happy_request_and_response(
     initialized_ws_client_session: ClientSession,
 ) -> None:
     """Test a successful request and response via WebSocket"""
-    result = await initialized_ws_client_session.read_resource("foobar://example")
+    result = await initialized_ws_client_session.read_resource(
+        AnyUrl("foobar://example")
+    )
     assert isinstance(result, ReadResourceResult)
     assert isinstance(result.contents, list)
     assert len(result.contents) > 0
@@ -202,7 +204,7 @@ async def test_ws_client_exception_handling(
 ) -> None:
     """Test exception handling in WebSocket communication"""
     with pytest.raises(McpError) as exc_info:
-        await initialized_ws_client_session.read_resource("unknown://example")
+        await initialized_ws_client_session.read_resource(AnyUrl("unknown://example"))
     assert exc_info.value.error.code == 404
 
 
@@ -214,11 +216,13 @@ async def test_ws_client_timeout(
     # Set a very short timeout to trigger a timeout exception
     with pytest.raises(TimeoutError):
         with anyio.fail_after(0.1):  # 100ms timeout
-            await initialized_ws_client_session.read_resource("slow://example")
+            await initialized_ws_client_session.read_resource(AnyUrl("slow://example"))
 
     # Now test that we can still use the session after a timeout
     with anyio.fail_after(5):  # Longer timeout to allow completion
-        result = await initialized_ws_client_session.read_resource("foobar://example")
+        result = await initialized_ws_client_session.read_resource(
+            AnyUrl("foobar://example")
+        )
         assert isinstance(result, ReadResourceResult)
         assert isinstance(result.contents, list)
         assert len(result.contents) > 0
