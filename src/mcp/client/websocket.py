@@ -4,9 +4,9 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 import anyio
+from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from pydantic import ValidationError
 from websockets.asyncio.client import connect as ws_connect
-from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from websockets.typing import Subprotocol
 
 import mcp.types as types
@@ -59,7 +59,8 @@ async def websocket_client(url: str) -> AsyncGenerator[
 
         async def ws_writer():
             """
-            Reads JSON-RPC messages from write_stream_reader and sends them to the server.
+            Reads JSON-RPC messages from write_stream_reader and 
+            sends them to the server.
             """
             async with write_stream_reader:
                 async for message in write_stream_reader:

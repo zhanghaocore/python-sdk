@@ -8,7 +8,6 @@ import pytest
 import uvicorn
 from pydantic import AnyUrl
 from starlette.applications import Starlette
-from starlette.requests import Request
 from starlette.routing import WebSocketRoute
 
 from mcp.client.session import ClientSession
