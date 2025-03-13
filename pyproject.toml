@@ -67,6 +67,9 @@ packages = ["src/mcp"]
 include = ["src/mcp", "tests"]
 venvPath = "."
 venv = ".venv"
+strict = [
+    "src/mcp/server/fastmcp/tools/base.py",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
@@ -85,3 +88,13 @@ members = ["examples/servers/*"]
 
 [tool.uv.sources]
 mcp = { workspace = true }
+
+[tool.pytest.ini_options]
+xfail_strict = true
+filterwarnings = [
+    "error",
+    # This should be fixed on Uvicorn's side.
+    "ignore::DeprecationWarning:websockets",
+    "ignore:websockets.server.WebSocketServerProtocol is deprecated:DeprecationWarning",
+    "ignore:Returning str or bytes.*:DeprecationWarning:mcp.server.lowlevel"
+]
