@@ -73,6 +73,8 @@ class Settings(BaseSettings, Generic[LifespanResultT]):
     # HTTP settings
     host: str = "0.0.0.0"
     port: int = 8000
+    sse_path: str = "/sse"
+    message_path: str = "/messages/"
 
     # resource settings
     warn_on_duplicate_resources: bool = True
@@ -477,7 +479,7 @@ class FastMCP:
 
     def sse_app(self) -> Starlette:
         """Return an instance of the SSE server app."""
-        sse = SseServerTransport("/messages/")
+        sse = SseServerTransport(self.settings.message_path)
 
         async def handle_sse(request: Request) -> None:
             async with sse.connect_sse(
@@ -494,8 +496,8 @@ class FastMCP:
         return Starlette(
             debug=self.settings.debug,
             routes=[
-                Route("/sse", endpoint=handle_sse),
-                Mount("/messages/", app=sse.handle_post_message),
+                Route(self.settings.sse_path, endpoint=handle_sse),
+                Mount(self.settings.message_path, app=sse.handle_post_message),
             ],
         )
 
@@ -650,9 +652,9 @@ class Context(BaseModel, Generic[ServerSessionT, LifespanContextT]):
         Returns:
             The resource content as either text or bytes
         """
-        assert (
-            self._fastmcp is not None
-        ), "Context is not available outside of a request"
+        assert self._fastmcp is not None, (
+            "Context is not available outside of a request"
+        )
         return await self._fastmcp.read_resource(uri)
 
     async def log(
