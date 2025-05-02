@@ -24,7 +24,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import Receive, Scope, Send
 
-from mcp.shared.message import SessionMessage
+from mcp.shared.message import ServerMessageMetadata, SessionMessage
 from mcp.types import (
     INTERNAL_ERROR,
     INVALID_PARAMS,
@@ -520,7 +520,7 @@ class StreamableHTTPServerTransport:
             )
             await response(scope, receive, send)
             if writer:
-                await writer.send(err)
+                await writer.send(Exception(err))
             return
 
     async def _handle_get_request(self, request: Request, send: Send) -> None:
@@ -834,12 +834,17 @@ class StreamableHTTPServerTransport:
                         ):
                             # Extract related_request_id from meta if it exists
                             if (
-                                (params := getattr(message.root, "params", None))
-                                and (meta := params.get("_meta"))
-                                and (related_id := meta.get("related_request_id"))
+                                session_message.metadata is not None
+                                and isinstance(
+                                    session_message.metadata,
+                                    ServerMessageMetadata,
+                                )
+                                and session_message.metadata.related_request_id
                                 is not None
                             ):
-                                target_request_id = str(related_id)
+                                target_request_id = str(
+                                    session_message.metadata.related_request_id
+                                )
                         else:
                             target_request_id = str(message.root.id)
 
