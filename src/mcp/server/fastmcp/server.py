@@ -589,6 +589,7 @@ class FastMCP:
                     streams[1],
                     self._mcp_server.create_initialization_options(),
                 )
+            return Response()
 
         # Create routes
         routes: list[Route | Mount] = []
