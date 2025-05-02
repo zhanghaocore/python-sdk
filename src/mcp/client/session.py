@@ -261,6 +261,7 @@ class ClientSession(
         read_timeout_seconds: timedelta | None = None,
     ) -> types.CallToolResult:
         """Send a tools/call request."""
+
         return await self.send_request(
             types.ClientRequest(
                 types.CallToolRequest(

@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from mcp.shared.exceptions import McpError
-from mcp.shared.message import ServerMessageMetadata, SessionMessage
+from mcp.shared.message import MessageMetadata, ServerMessageMetadata, SessionMessage
 from mcp.types import (
     CancelledNotification,
     ClientNotification,
@@ -213,6 +213,7 @@ class BaseSession(
         request: SendRequestT,
         result_type: type[ReceiveResultT],
         request_read_timeout_seconds: timedelta | None = None,
+        metadata: MessageMetadata = None,
     ) -> ReceiveResultT:
         """
         Sends a request and wait for a response. Raises an McpError if the
@@ -241,7 +242,9 @@ class BaseSession(
             # TODO: Support progress callbacks
 
             await self._write_stream.send(
-                SessionMessage(message=JSONRPCMessage(jsonrpc_request))
+                SessionMessage(
+                    message=JSONRPCMessage(jsonrpc_request), metadata=metadata
+                )
             )
 
             # request read timeout takes precedence over session read timeout
