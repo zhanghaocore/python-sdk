@@ -480,7 +480,7 @@ class Server(Generic[LifespanResultT]):
         # but also make tracing exceptions much easier during testing and when using
         # in-process servers.
         raise_exceptions: bool = False,
-        # When True, the server as stateless deployments where
+        # When True, the server is stateless and
         # clients can perform initialization with any node. The client must still follow
         # the initialization lifecycle, but can do so with any available node
         # rather than requiring initialization for each connection.
