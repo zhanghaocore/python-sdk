@@ -85,11 +85,17 @@ class ServerSession(
         read_stream: MemoryObjectReceiveStream[types.JSONRPCMessage | Exception],
         write_stream: MemoryObjectSendStream[types.JSONRPCMessage],
         init_options: InitializationOptions,
+        stateless: bool = False,
     ) -> None:
         super().__init__(
             read_stream, write_stream, types.ClientRequest, types.ClientNotification
         )
-        self._initialization_state = InitializationState.NotInitialized
+        self._initialization_state = (
+            InitializationState.Initialized
+            if stateless
+            else InitializationState.NotInitialized
+        )
+
         self._init_options = init_options
         self._incoming_message_stream_writer, self._incoming_message_stream_reader = (
             anyio.create_memory_object_stream[ServerRequestResponder](0)
